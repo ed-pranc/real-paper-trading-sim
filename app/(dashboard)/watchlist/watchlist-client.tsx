@@ -17,8 +17,8 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left: header + add button */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
+      {/* Full-width header row: title left, add button right */}
+      <div className="col-span-12 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">My Watchlist</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -27,15 +27,15 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
         </div>
         <Button
           onClick={() => setSearchOpen(true)}
-          className="rounded-full bg-green-600 hover:bg-green-700 w-full"
+          className="rounded-full bg-green-600 hover:bg-green-700 shrink-0"
         >
           <Plus className="h-4 w-4 mr-1" />
           Add Markets
         </Button>
       </div>
 
-      {/* Right: table or empty state */}
-      <div className="col-span-12 lg:col-span-9">
+      {/* Full-width table or empty state */}
+      <div className="col-span-12">
         {items.length > 0 ? (
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30">

@@ -84,46 +84,48 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left: header + summary cards + filters */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">History</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Full record of all your trades. Filter by date range and type.
-          </p>
-        </div>
+      {/* Full-width header */}
+      <div className="col-span-12">
+        <h1 className="text-2xl font-bold">History</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Full record of all your trades. Filter by date range and type. Realised P/L tracks closed positions.
+        </p>
+      </div>
 
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+      {/* Full-width summary stats row */}
+      <div className="col-span-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Total Trades</p>
-              <p className="text-xl font-semibold mt-1">{transactions.length}</p>
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Trades</p>
+              <p className="text-2xl font-bold mt-1">{transactions.length}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Money In (Buys)</p>
-              <p className="text-xl font-semibold mt-1">{fmt(totalIn)}</p>
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Money In</p>
+              <p className="text-2xl font-bold mt-1">{fmt(totalIn)}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Money Out (Sells)</p>
-              <p className="text-xl font-semibold mt-1">{fmt(totalOut)}</p>
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Money Out</p>
+              <p className="text-2xl font-bold mt-1">{fmt(totalOut)}</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Realised P/L</p>
-              <p className={`text-xl font-semibold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <CardContent className="pt-5 pb-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Realised P/L</p>
+              <p className={`text-2xl font-bold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                 {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
               </p>
             </CardContent>
           </Card>
         </div>
+      </div>
 
-        {/* Filters */}
+      {/* Left: filters (col-3) */}
+      <div className="col-span-12 lg:col-span-3">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-8">From</span>
@@ -172,7 +174,7 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
         </div>
       </div>
 
-      {/* Right: chart + table */}
+      {/* Right: chart + table (col-9) */}
       <div className="col-span-12 lg:col-span-9 space-y-6">
         <Card>
           <CardHeader className="pb-2">

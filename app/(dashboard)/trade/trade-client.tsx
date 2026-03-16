@@ -46,7 +46,6 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'buy' | 'sell'>('buy')
 
-  // Symbol search
   useEffect(() => {
     if (!query || query.length < 1) { setResults([]); setShowDropdown(false); return }
     const timeout = setTimeout(async () => {
@@ -63,7 +62,6 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
     return () => clearTimeout(timeout)
   }, [query])
 
-  // Quote fetch
   const fetchQuote = useCallback(async () => {
     if (!symbol) return
     setQuoteLoading(true)
@@ -98,142 +96,134 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left: header + search */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
+      {/* Left panel: header + search + asset info + buy/sell (col-4) */}
+      <div className="col-span-12 lg:col-span-4 space-y-4">
         <div>
           <h1 className="text-2xl font-bold">Trade</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Search any stock and execute buy or sell orders at live or historical simulation prices.
+            Search any stock and execute orders at live or historical prices.
           </p>
         </div>
 
-        <Card>
-          <CardContent className="pt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search symbol or company…"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                onFocus={() => results.length > 0 && setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                className="pl-9"
-              />
-              {searching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-
-              {showDropdown && results.length > 0 && (
-                <div className="absolute z-50 top-full mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden">
-                  {results.map(r => (
-                    <button
-                      key={r.symbol}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
-                      onMouseDown={() => selectSymbol(r.symbol, r.instrument_name)}
-                    >
-                      <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
-                        {r.symbol.slice(0, 2)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm">{r.symbol}</p>
-                        <p className="text-xs text-muted-foreground truncate">{r.instrument_name}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs shrink-0">{r.exchange}</Badge>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Right: stock detail or empty state */}
-      <div className="col-span-12 lg:col-span-9 space-y-6">
-        {symbol ? (
-          <>
-            {/* Stock header card */}
-            <Card>
-              <CardContent className="pt-5">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-sm font-bold shrink-0">
-                      {symbol.slice(0, 2)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-bold">{symbol}</h2>
-                        {simulationDate && (
-                          <Badge variant="secondary" className="text-xs">SIM: {simulationDate}</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{companyName}</p>
-                    </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search symbol or company…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onFocus={() => results.length > 0 && setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            className="pl-9"
+          />
+          {searching && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
+          {showDropdown && results.length > 0 && (
+            <div className="absolute z-50 top-full mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden">
+              {results.map(r => (
+                <button
+                  key={r.symbol}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
+                  onMouseDown={() => selectSymbol(r.symbol, r.instrument_name)}
+                >
+                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
+                    {r.symbol.slice(0, 2)}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm">{r.symbol}</p>
+                    <p className="text-xs text-muted-foreground truncate">{r.instrument_name}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0">{r.exchange}</Badge>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-                  <div className="text-right">
-                    {quoteLoading && !quote ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground ml-auto" />
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-1 justify-end">
-                          <p className="text-2xl font-bold">${price.toFixed(2)}</p>
-                          {quoteLoading && (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          )}
-                        </div>
-                        {!quote?.is_historical && (
-                          <div className={`flex items-center gap-1 justify-end text-sm ${positive ? 'text-green-500' : 'text-red-500'}`}>
-                            {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            <span>{positive ? '+' : ''}{change.toFixed(2)}</span>
-                            <span>({positive ? '+' : ''}{pctChange.toFixed(2)}%)</span>
-                          </div>
-                        )}
-                        {lastUpdated && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Last updated: {lastUpdated}
-                          </p>
-                        )}
-                      </>
+        {/* Asset info + price + buy/sell — shown when symbol selected */}
+        {symbol && (
+          <Card>
+            <CardContent className="pt-5 space-y-4">
+              {/* Symbol header */}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold shrink-0">
+                  {symbol.slice(0, 2)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-lg font-bold">{symbol}</h2>
+                    {simulationDate && (
+                      <Badge variant="secondary" className="text-xs">SIM</Badge>
                     )}
                   </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      className="rounded-full bg-green-600 hover:bg-green-700 text-white px-6"
-                      disabled={!price}
-                      onClick={() => { setModalMode('buy'); setModalOpen(true) }}
-                    >
-                      Buy
-                    </Button>
-                    <Button
-                      className="rounded-full bg-red-600 hover:bg-red-700 text-white px-6"
-                      disabled={!price}
-                      onClick={() => { setModalMode('sell'); setModalOpen(true) }}
-                    >
-                      Sell
-                    </Button>
-                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{companyName}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Chart */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Price Chart — {symbol}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <StockChart symbol={symbol} simulationDate={simulationDate} />
-              </CardContent>
-            </Card>
-          </>
+              {/* Price */}
+              <div>
+                {quoteLoading && !quote ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <p className="text-3xl font-bold">${price.toFixed(2)}</p>
+                      {quoteLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                    {!quote?.is_historical && (
+                      <div className={`flex items-center gap-1 text-sm mt-1 ${positive ? 'text-green-500' : 'text-red-500'}`}>
+                        {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                        <span>{positive ? '+' : ''}{change.toFixed(2)}</span>
+                        <span>({positive ? '+' : ''}{pctChange.toFixed(2)}%)</span>
+                      </div>
+                    )}
+                    {lastUpdated && (
+                      <p className="text-xs text-muted-foreground mt-1">Updated {lastUpdated}</p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Buy / Sell buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button
+                  className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+                  disabled={!price}
+                  onClick={() => { setModalMode('buy'); setModalOpen(true) }}
+                >
+                  Buy
+                </Button>
+                <Button
+                  className="rounded-full bg-red-600 hover:bg-red-700 text-white"
+                  disabled={!price}
+                  onClick={() => { setModalMode('sell'); setModalOpen(true) }}
+                >
+                  Sell
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Right panel: chart or empty state (col-8) */}
+      <div className="col-span-12 lg:col-span-8">
+        {symbol ? (
+          <Card className="h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Price Chart — {symbol}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StockChart symbol={symbol} simulationDate={simulationDate} />
+            </CardContent>
+          </Card>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="flex flex-col items-center justify-center h-full min-h-80 text-center">
             <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-semibold text-lg">Search for a stock to trade</h3>
             <p className="text-muted-foreground text-sm mt-1">
-              Enter a symbol or company name to view prices and place orders
+              Enter a symbol or company name on the left to view prices and place orders
             </p>
           </div>
         )}

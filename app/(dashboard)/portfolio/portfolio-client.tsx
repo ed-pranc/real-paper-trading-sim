@@ -30,45 +30,44 @@ export function PortfolioClient({ positions }: { positions: Position[] }) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left: header + summary cards */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Portfolio</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Your open positions and performance. Buy more or close positions at live or historical prices.
-          </p>
-        </div>
-
-        {positions.length > 0 && (
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Invested</p>
-                <p className="text-xl font-semibold mt-1">{fmt(summary.invested)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Unrealised P/L</p>
-                <p className={`text-xl font-semibold mt-1 ${summary.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {summary.pnl >= 0 ? '+' : ''}{fmt(summary.pnl)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-xl font-semibold mt-1">{fmt(summary.total)}</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+      {/* Full-width header */}
+      <div className="col-span-12">
+        <h1 className="text-2xl font-bold">Portfolio</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Your open positions and performance. Buy more or close positions at live or historical prices.
+        </p>
       </div>
 
-      {/* Right: chart + positions table or empty state */}
-      <div className="col-span-12 lg:col-span-9 space-y-6">
-        {positions.length > 0 ? (
-          <>
+      {positions.length > 0 ? (
+        <>
+          {/* Summary stats — horizontal row */}
+          <div className="col-span-12">
+            <div className="grid grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-5 pb-5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Invested</p>
+                  <p className="text-2xl font-bold mt-1">{fmt(summary.invested)}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-5 pb-5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Unrealised P/L</p>
+                  <p className={`text-2xl font-bold mt-1 ${summary.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {summary.pnl >= 0 ? '+' : ''}{fmt(summary.pnl)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-5 pb-5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
+                  <p className="text-2xl font-bold mt-1">{fmt(summary.total)}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Portfolio chart — full width */}
+          <div className="col-span-12">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Portfolio Value Over Time</CardTitle>
@@ -77,7 +76,10 @@ export function PortfolioClient({ positions }: { positions: Position[] }) {
                 <PortfolioChart symbols={chartSymbols} simulationDate={simulationDate} />
               </CardContent>
             </Card>
+          </div>
 
+          {/* Positions table — full width */}
+          <div className="col-span-12">
             <Card>
               <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
                 <div className="w-48 shrink-0 text-xs font-medium text-muted-foreground">Asset</div>
@@ -98,17 +100,17 @@ export function PortfolioClient({ positions }: { positions: Position[] }) {
                 />
               ))}
             </Card>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <BarChart2 className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg">No open positions</h3>
-            <p className="text-muted-foreground text-sm mt-1">
-              Buy stocks from the Watchlist or Trade page to see them here
-            </p>
           </div>
-        )}
-      </div>
+        </>
+      ) : (
+        <div className="col-span-12 flex flex-col items-center justify-center py-24 text-center">
+          <BarChart2 className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="font-semibold text-lg">No open positions</h3>
+          <p className="text-muted-foreground text-sm mt-1">
+            Buy stocks from the Watchlist or Trade page to see them here
+          </p>
+        </div>
+      )}
     </div>
   )
 }
