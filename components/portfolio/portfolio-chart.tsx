@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
 
 const PERIODS = ['1D', '1W', '1M', '6M', '1Y', '2Y', '5Y', 'All'] as const
 type Period = typeof PERIODS[number]
@@ -77,7 +76,8 @@ export function PortfolioChart({ symbols, simulationDate, snapshots }: Portfolio
       )
 
       if (seriesResults.every(r => !r || r.error)) {
-        toast.error('Chart data unavailable', { description: seriesResults[0]?.error ?? 'Could not load price history' })
+        setLoading(false)
+        return
       }
 
       const dateMap: Record<string, number> = {}
