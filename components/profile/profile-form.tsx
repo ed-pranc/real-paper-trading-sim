@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { saveProfile } from '@/lib/actions/profile'
 import { Loader2, CheckCircle2, User } from 'lucide-react'
 
@@ -90,107 +89,105 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-xl">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold">Profile</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your personal details. Your nickname appears in the sidebar and header.
-        </p>
+    <div className="grid grid-cols-12 gap-6">
+      {/* Left: header + account card */}
+      <div className="col-span-12 lg:col-span-3 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Profile</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage your personal details. Your nickname appears in the sidebar and header.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Account
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold shrink-0">
+                {(nickname || email || 'T')[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="font-medium">{nickname || 'No nickname set'}</p>
+                <p className="text-sm text-muted-foreground">{email}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Account info card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Account
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold shrink-0">
-              {(nickname || email || 'T')[0].toUpperCase()}
+      {/* Right: form cards + save */}
+      <div className="col-span-12 lg:col-span-9 space-y-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Personal Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Field
+              label="Nickname"
+              value={nickname}
+              onChange={setNickname}
+              placeholder="e.g. TradingPro"
+              required
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="First Name" value={firstName} onChange={setFirstName} placeholder="John" />
+              <Field label="Last Name" value={lastName} onChange={setLastName} placeholder="Smith" />
             </div>
-            <div>
-              <p className="font-medium">{nickname || 'No nickname set'}</p>
-              <p className="text-sm text-muted-foreground">{email}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Address</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Field label="Address Line 1" value={address1} onChange={setAddress1} placeholder="Street and number" />
+            <Field label="Address Line 2" value={address2} onChange={setAddress2} placeholder="Apartment, suite, etc." />
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="City" value={city} onChange={setCity} placeholder="Vilnius" />
+              <Field label="Postal Code" value={postalCode} onChange={setPostalCode} placeholder="LT-01001" />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium leading-none">Country</label>
+              <Select value={country} onValueChange={(v) => { if (v) setCountry(v) }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LT">Lithuania</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Personal details card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Personal Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field
-            label="Nickname"
-            value={nickname}
-            onChange={setNickname}
-            placeholder="e.g. TradingPro"
-            required
-          />
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="First Name" value={firstName} onChange={setFirstName} placeholder="John" />
-            <Field label="Last Name" value={lastName} onChange={setLastName} placeholder="Smith" />
-          </div>
-        </CardContent>
-      </Card>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleSave}
+            disabled={isPending}
+            className="rounded-full bg-green-600 hover:bg-green-700 px-8"
+          >
+            {isPending ? (
+              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving…</>
+            ) : (
+              'Save Profile'
+            )}
+          </Button>
 
-      {/* Address card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Address</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Field label="Address Line 1" value={address1} onChange={setAddress1} placeholder="Street and number" />
-          <Field label="Address Line 2" value={address2} onChange={setAddress2} placeholder="Apartment, suite, etc." />
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="City" value={city} onChange={setCity} placeholder="Vilnius" />
-            <Field label="Postal Code" value={postalCode} onChange={setPostalCode} placeholder="LT-01001" />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium leading-none">Country</label>
-            <Select value={country} onValueChange={(v) => { if (v) setCountry(v) }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="LT">Lithuania</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Actions */}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={handleSave}
-          disabled={isPending}
-          className="rounded-full bg-green-600 hover:bg-green-700 px-8"
-        >
-          {isPending ? (
-            <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving…</>
-          ) : (
-            'Save Profile'
+          {saved && (
+            <div className="flex items-center gap-1.5 text-sm text-green-500">
+              <CheckCircle2 className="h-4 w-4" />
+              Profile saved
+            </div>
           )}
-        </Button>
-
-        {saved && (
-          <div className="flex items-center gap-1.5 text-sm text-green-500">
-            <CheckCircle2 className="h-4 w-4" />
-            Profile saved
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

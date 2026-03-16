@@ -37,6 +37,18 @@ interface HistoryClientProps {
   transactions: Transaction[]
 }
 
+function SortBtn({ k, label, onToggle }: { k: SortKey; label: string; onToggle: (key: SortKey) => void }) {
+  return (
+    <button
+      onClick={() => onToggle(k)}
+      className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+    >
+      {label}
+      <ArrowUpDown className="h-3 w-3" />
+    </button>
+  )
+}
+
 export function HistoryClient({ transactions }: HistoryClientProps) {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -66,233 +78,205 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
     })
   }, [transactions, from, to, sortKey, sortDir, typeFilter])
 
-  // Summary stats
   const totalIn = transactions.filter(t => t.type === 'buy').reduce((s, t) => s + t.total, 0)
   const totalOut = transactions.filter(t => t.type === 'sell').reduce((s, t) => s + t.total, 0)
   const realisedPnL = transactions.filter(t => t.type === 'sell' && t.pnl != null).reduce((s, t) => s + Number(t.pnl ?? 0), 0)
 
-  function SortBtn({ k, label }: { k: SortKey; label: string }) {
-    return (
-      <button
-        onClick={() => toggleSort(k)}
-        className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        {label}
-        <ArrowUpDown className="h-3 w-3" />
-      </button>
-    )
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold">History</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Full record of all your trades. Filter by date range and type. Realised P/L tracks closed positions.
-        </p>
-      </div>
-
-      {/* Summary bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Total Trades</p>
-            <p className="text-xl font-semibold mt-1">{transactions.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Money In (Buys)</p>
-            <p className="text-xl font-semibold mt-1">{fmt(totalIn)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Money Out (Sells)</p>
-            <p className="text-xl font-semibold mt-1">{fmt(totalOut)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground">Realised P/L</p>
-            <p className={`text-xl font-semibold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* P/L over time chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Cumulative Realised P/L Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PnLChart transactions={transactions} />
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">From</span>
-          <Input
-            type="date"
-            value={from}
-            onChange={e => setFrom(e.target.value)}
-            className="h-8 w-36 text-xs"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">To</span>
-          <Input
-            type="date"
-            value={to}
-            onChange={e => setTo(e.target.value)}
-            className="h-8 w-36 text-xs"
-          />
-        </div>
-        <div className="flex gap-1">
-          {(['all', 'buy', 'sell'] as const).map(t => (
-            <Button
-              key={t}
-              variant={typeFilter === t ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-full h-8 px-3 text-xs capitalize"
-              onClick={() => setTypeFilter(t)}
-            >
-              {t}
-            </Button>
-          ))}
-        </div>
-        {(from || to || typeFilter !== 'all') && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}
-          >
-            Clear
-          </Button>
-        )}
-        <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} of {transactions.length} transactions
-        </span>
-      </div>
-
-      {/* Transaction table */}
-      {transactions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <History className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-semibold text-lg">No transactions yet</h3>
+    <div className="grid grid-cols-12 gap-6">
+      {/* Left: header + summary cards + filters */}
+      <div className="col-span-12 lg:col-span-3 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">History</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Buy or sell stocks from the Trade or Watchlist page to see them here
+            Full record of all your trades. Filter by date range and type.
           </p>
         </div>
-      ) : (
-        <Card>
-          {/* Table header */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
-            <div className="w-8 shrink-0"></div>
-            <div className="w-32 shrink-0">
-              <SortBtn k="symbol" label="Asset" />
-            </div>
-            <div className="w-20 shrink-0 text-xs font-medium text-muted-foreground">Type</div>
-            <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Qty</div>
-            <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Price</div>
-            <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-right">
-              <SortBtn k="total" label="Total" />
-            </div>
-            <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-right">
-              <SortBtn k="pnl" label="P/L" />
-            </div>
-            <div className="flex-1 text-xs font-medium text-muted-foreground">
-              <SortBtn k="trade_date" label="Trade Date" />
-            </div>
-            <div className="hidden xl:block w-28 text-xs font-medium text-muted-foreground">Sim Date</div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Total Trades</p>
+              <p className="text-xl font-semibold mt-1">{transactions.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Money In (Buys)</p>
+              <p className="text-xl font-semibold mt-1">{fmt(totalIn)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Money Out (Sells)</p>
+              <p className="text-xl font-semibold mt-1">{fmt(totalOut)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Realised P/L</p>
+              <p className={`text-xl font-semibold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-8">From</span>
+            <Input
+              type="date"
+              value={from}
+              onChange={e => setFrom(e.target.value)}
+              className="h-8 text-xs"
+            />
           </div>
-
-          {filtered.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No transactions match the current filters
-            </div>
-          ) : (
-            filtered.map(t => {
-              const pnlPositive = (t.pnl ?? 0) >= 0
-              return (
-                <div
-                  key={t.id}
-                  className="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors last:border-0"
-                >
-                  {/* Icon */}
-                  <div className="w-8 shrink-0">
-                    {t.type === 'buy'
-                      ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
-                      : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
-                  </div>
-
-                  {/* Symbol */}
-                  <div className="w-32 shrink-0">
-                    <p className="font-semibold text-sm">{t.symbol}</p>
-                    <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
-                  </div>
-
-                  {/* Type */}
-                  <div className="w-20 shrink-0">
-                    <Badge
-                      className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`}
-                      variant="outline"
-                    >
-                      {t.type.toUpperCase()}
-                    </Badge>
-                  </div>
-
-                  {/* Qty */}
-                  <div className="w-24 shrink-0 text-right">
-                    <p className="text-sm tabular-nums">{Number(t.quantity).toFixed(6)}</p>
-                  </div>
-
-                  {/* Price */}
-                  <div className="w-24 shrink-0 text-right">
-                    <p className="text-sm tabular-nums">{fmt(t.price)}</p>
-                  </div>
-
-                  {/* Total */}
-                  <div className="w-28 shrink-0 text-right">
-                    <p className="text-sm font-medium tabular-nums">{fmt(t.total)}</p>
-                  </div>
-
-                  {/* P/L */}
-                  <div className="w-28 shrink-0 text-right">
-                    {t.type === 'sell' && t.pnl != null ? (
-                      <p className={`text-sm font-semibold tabular-nums ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-                        {pnlPositive ? '+' : ''}{fmt(Number(t.pnl))}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">—</p>
-                    )}
-                  </div>
-
-                  {/* Trade date */}
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">{fmtDate(t.trade_date)}</p>
-                  </div>
-
-                  {/* Sim date */}
-                  <div className="hidden xl:block w-28">
-                    {t.simulation_date ? (
-                      <Badge variant="secondary" className="text-xs">{t.simulation_date.slice(0, 10)}</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Live</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground w-8">To</span>
+            <Input
+              type="date"
+              value={to}
+              onChange={e => setTo(e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+          <div className="flex gap-1">
+            {(['all', 'buy', 'sell'] as const).map(t => (
+              <Button
+                key={t}
+                variant={typeFilter === t ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full h-8 px-3 text-xs capitalize"
+                onClick={() => setTypeFilter(t)}
+              >
+                {t}
+              </Button>
+            ))}
+          </div>
+          {(from || to || typeFilter !== 'all') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs w-full"
+              onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}
+            >
+              Clear filters
+            </Button>
           )}
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} of {transactions.length} transactions
+          </p>
+        </div>
+      </div>
+
+      {/* Right: chart + table */}
+      <div className="col-span-12 lg:col-span-9 space-y-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Cumulative Realised P/L Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PnLChart transactions={transactions} />
+          </CardContent>
         </Card>
-      )}
+
+        {transactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <History className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-lg">No transactions yet</h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Buy or sell stocks from the Trade or Watchlist page to see them here
+            </p>
+          </div>
+        ) : (
+          <Card>
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
+              <div className="w-8 shrink-0"></div>
+              <div className="w-32 shrink-0">
+                <SortBtn k="symbol" label="Asset" onToggle={toggleSort} />
+              </div>
+              <div className="w-20 shrink-0 text-xs font-medium text-muted-foreground">Type</div>
+              <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Qty</div>
+              <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Price</div>
+              <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-right">
+                <SortBtn k="total" label="Total" onToggle={toggleSort} />
+              </div>
+              <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-right">
+                <SortBtn k="pnl" label="P/L" onToggle={toggleSort} />
+              </div>
+              <div className="flex-1 text-xs font-medium text-muted-foreground">
+                <SortBtn k="trade_date" label="Trade Date" onToggle={toggleSort} />
+              </div>
+              <div className="hidden xl:block w-28 text-xs font-medium text-muted-foreground">Sim Date</div>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                No transactions match the current filters
+              </div>
+            ) : (
+              filtered.map(t => {
+                const pnlPositive = (t.pnl ?? 0) >= 0
+                return (
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors last:border-0"
+                  >
+                    <div className="w-8 shrink-0">
+                      {t.type === 'buy'
+                        ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
+                        : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
+                    </div>
+                    <div className="w-32 shrink-0">
+                      <p className="font-semibold text-sm">{t.symbol}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
+                    </div>
+                    <div className="w-20 shrink-0">
+                      <Badge
+                        className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`}
+                        variant="outline"
+                      >
+                        {t.type.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div className="w-24 shrink-0 text-right">
+                      <p className="text-sm tabular-nums">{Number(t.quantity).toFixed(6)}</p>
+                    </div>
+                    <div className="w-24 shrink-0 text-right">
+                      <p className="text-sm tabular-nums">{fmt(t.price)}</p>
+                    </div>
+                    <div className="w-28 shrink-0 text-right">
+                      <p className="text-sm font-medium tabular-nums">{fmt(t.total)}</p>
+                    </div>
+                    <div className="w-28 shrink-0 text-right">
+                      {t.type === 'sell' && t.pnl != null ? (
+                        <p className={`text-sm font-semibold tabular-nums ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
+                          {pnlPositive ? '+' : ''}{fmt(Number(t.pnl))}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">—</p>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">{fmtDate(t.trade_date)}</p>
+                    </div>
+                    <div className="hidden xl:block w-28">
+                      {t.simulation_date ? (
+                        <Badge variant="secondary" className="text-xs">{t.simulation_date.slice(0, 10)}</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Live</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,12 @@
 const BASE_URL = 'https://api.twelvedata.com'
 const API_KEY = process.env.TWELVE_DATA_API_KEY!
 
+/**
+ * Low-level fetch wrapper for the Twelve Data REST API.
+ * @param {string} endpoint - API endpoint path, e.g. '/quote'
+ * @param {Record<string, string>} params - Query parameters to append
+ * @returns {Promise<unknown>} Parsed JSON response
+ */
 export async function tdFetch(endpoint: string, params: Record<string, string>) {
   const url = new URL(`${BASE_URL}${endpoint}`)
   url.searchParams.set('apikey', API_KEY)
@@ -11,9 +17,14 @@ export async function tdFetch(endpoint: string, params: Record<string, string>) 
   return res.json()
 }
 
+/**
+ * Fetch a live quote or historical closing price for a symbol.
+ * @param {string} symbol - Ticker symbol, e.g. 'AAPL'
+ * @param {string} [date] - ISO date string for historical price; omit for live
+ * @returns {Promise<unknown>} Quote or time series bar object
+ */
 export async function getQuote(symbol: string, date?: string) {
   if (date) {
-    // Historical price: fetch time_series for that date
     const data = await tdFetch('/time_series', {
       symbol,
       interval: '1day',
@@ -26,6 +37,14 @@ export async function getQuote(symbol: string, date?: string) {
   return tdFetch('/quote', { symbol })
 }
 
+/**
+ * Fetch OHLCV time series data for charting.
+ * @param {string} symbol - Ticker symbol
+ * @param {string} interval - Time interval, e.g. '1h', '1day'
+ * @param {string} outputsize - Number of data points to return
+ * @param {string} [endDate] - Optional ISO date to end the series at
+ * @returns {Promise<unknown>} Time series response from Twelve Data
+ */
 export async function getTimeSeries(
   symbol: string,
   interval: string,
@@ -37,6 +56,11 @@ export async function getTimeSeries(
   return tdFetch('/time_series', params)
 }
 
+/**
+ * Search for symbols matching a query string.
+ * @param {string} query - Search term (symbol or company name)
+ * @returns {Promise<unknown>} Symbol search results from Twelve Data
+ */
 export async function searchSymbol(query: string) {
   return tdFetch('/symbol_search', { symbol: query, outputsize: '10' })
 }

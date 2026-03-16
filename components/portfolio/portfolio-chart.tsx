@@ -30,9 +30,9 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
 
   useEffect(() => {
     if (symbols.length === 0) return
-    setLoading(true)
 
     async function fetchChart() {
+      setLoading(true)
       const cfg = PERIOD_CONFIG[period]
       const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
 

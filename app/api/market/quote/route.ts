@@ -1,17 +1,32 @@
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 import { tdFetch } from '@/lib/twelvedata/client'
 
+const QuerySchema = z.object({
+  symbol: z.string().min(1).max(20),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+})
+
+/**
+ * GET /api/market/quote?symbol=AAPL&date=2024-01-15
+ * Returns live quote or historical close price for a given date.
+ */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const symbol = searchParams.get('symbol')
-  const date = searchParams.get('date') // simulation date, optional
+  const result = QuerySchema.safeParse({
+    symbol: searchParams.get('symbol') ?? undefined,
+    date: searchParams.get('date') ?? undefined,
+  })
 
-  if (!symbol) return NextResponse.json({ error: 'Missing symbol' }, { status: 400 })
+  if (!result.success) {
+    return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
+  }
+
+  const { symbol, date } = result.data
 
   try {
     let data
     if (date) {
-      // Historical: get closing price for that date
       const ts = await tdFetch('/time_series', {
         symbol,
         interval: '1day',
@@ -34,7 +49,7 @@ export async function GET(request: Request) {
       data = await tdFetch('/quote', { symbol })
     }
     return NextResponse.json(data)
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Quote failed' }, { status: 500 })
   }
 }

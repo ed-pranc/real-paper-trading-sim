@@ -1,23 +1,30 @@
 'use server'
 
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+const DepositSchema = z.number().positive().max(1_000_000)
+
+/**
+ * Deposit virtual funds into the user's wallet.
+ * @param {number} amount - Amount to deposit (must be positive, max 1,000,000)
+ * @returns {Promise<void>}
+ */
 export async function depositFunds(amount: number) {
-  if (amount <= 0) throw new Error('Amount must be positive')
+  const parsed = DepositSchema.parse(amount)
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  // Fetch current balance
   const { data: wallet } = await supabase
     .from('wallet_balance')
     .select('cash_balance')
     .eq('user_id', user.id)
     .single()
 
-  const newBalance = (Number(wallet?.cash_balance) || 0) + amount
+  const newBalance = (Number(wallet?.cash_balance) || 0) + parsed
 
   await supabase
     .from('wallet_balance')
@@ -29,6 +36,12 @@ export async function depositFunds(amount: number) {
   revalidatePath('/', 'layout')
 }
 
+/**
+ * Fetch wallet cash balance and invested amount for a user.
+ * P/L is calculated separately with live prices by WalletProvider.
+ * @param {string} userId - Supabase user ID
+ * @returns {Promise<{ cash: number; invested: number; pnl: number; total: number; updatedAt: string | null }>}
+ */
 export async function getWalletSummary(userId: string) {
   const supabase = await createClient()
 
@@ -46,7 +59,6 @@ export async function getWalletSummary(userId: string) {
     0
   )
 
-  // pnl will be calculated with live prices later; 0 for now
   return {
     cash,
     invested,

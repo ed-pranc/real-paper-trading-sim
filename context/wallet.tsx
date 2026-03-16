@@ -21,6 +21,12 @@ const WalletContext = createContext<WalletContextValue | null>(null)
 
 const DEFAULT: WalletSummary = { cash: 0, invested: 0, pnl: 0, total: 0, updatedAt: null }
 
+/**
+ * Provides live wallet summary (cash, invested, unrealised P/L) to the dashboard.
+ * Refreshes every 60 seconds and on simulation date change.
+ * Fetches live or historical prices for each open position to compute P/L.
+ * @param {{ children: React.ReactNode; userId: string }} props
+ */
 export function WalletProvider({ children, userId }: { children: React.ReactNode; userId: string }) {
   const [summary, setSummary] = useState<WalletSummary>(DEFAULT)
   const { simulationDate } = useSimulationDate()
@@ -77,8 +83,9 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   }, [userId, simulationDate])
 
   useEffect(() => {
-    refresh()
-    const interval = setInterval(refresh, 60_000)
+    async function load() { await refresh() }
+    load()
+    const interval = setInterval(() => { void refresh() }, 60_000)
     return () => clearInterval(interval)
   }, [refresh])
 
@@ -89,6 +96,11 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   )
 }
 
+/**
+ * Returns the wallet summary and a refresh function.
+ * Must be used inside WalletProvider.
+ * @returns {{ summary: WalletSummary; refresh: () => void }}
+ */
 export function useWallet() {
   const ctx = useContext(WalletContext)
   if (!ctx) throw new Error('useWallet must be used inside WalletProvider')
