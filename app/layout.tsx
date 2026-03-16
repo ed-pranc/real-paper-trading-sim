@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <SimulationDateProvider>
             {children}
-            <Toaster position="bottom-right" richColors closeButton />
+            <Toaster position="bottom-right" richColors closeButton duration={10000} />
           </SimulationDateProvider>
         </ThemeProvider>
       </body>
