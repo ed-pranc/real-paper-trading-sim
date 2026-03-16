@@ -157,7 +157,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium leading-none">Country</label>
-            <Select value={country} onValueChange={setCountry}>
+            <Select value={country} onValueChange={(v) => { if (v) setCountry(v) }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
