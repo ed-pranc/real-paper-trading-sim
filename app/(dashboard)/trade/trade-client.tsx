@@ -10,6 +10,7 @@ import { StockChart } from '@/components/trade/stock-chart'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2, Search, TrendingUp, TrendingDown } from 'lucide-react'
+import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 
 interface SearchResult {
   symbol: string
@@ -69,6 +70,7 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
       const dateParam = simulationDate ? `&date=${simulationDate}` : ''
       const res = await fetch(`/api/market/quote?symbol=${symbol}${dateParam}`)
       const data = await res.json()
+      if (!res.ok) { setQuote(null); return }
       setQuote(data)
       setLastUpdated(new Date().toLocaleTimeString())
     } finally {
@@ -96,15 +98,16 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left panel: header + search + asset info + buy/sell (col-4) */}
-      <div className="col-span-12 lg:col-span-4 space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold">Trade</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Search any stock and execute orders at live or historical prices.
-          </p>
-        </div>
+      {/* Full-width header */}
+      <div className="col-span-12">
+        <h1 className="text-2xl font-bold">Trade</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Search any stock and execute orders at live or historical prices.
+        </p>
+      </div>
 
+      {/* Left panel: search + asset info + buy/sell (col-4) */}
+      <div className="col-span-12 lg:col-span-4 space-y-4">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -127,9 +130,7 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
                   className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
                   onMouseDown={() => selectSymbol(r.symbol, r.instrument_name)}
                 >
-                  <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
-                    {r.symbol.slice(0, 2)}
-                  </div>
+                  <SymbolAvatar symbol={r.symbol} size={28} />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{r.symbol}</p>
                     <p className="text-xs text-muted-foreground truncate">{r.instrument_name}</p>
@@ -147,9 +148,7 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
             <CardContent className="pt-5 space-y-4">
               {/* Symbol header */}
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold shrink-0">
-                  {symbol.slice(0, 2)}
-                </div>
+                <SymbolAvatar symbol={symbol} size={40} />
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-lg font-bold">{symbol}</h2>

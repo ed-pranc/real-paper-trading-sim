@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2 } from 'lucide-react'
+import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 
 interface PortfolioRowProps {
   symbol: string
@@ -62,9 +63,7 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
         {/* Symbol + name */}
         <div className="w-48 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
-              {symbol.slice(0, 2)}
-            </div>
+            <SymbolAvatar symbol={symbol} size={32} />
             <div>
               <p className="font-semibold text-sm">{symbol}</p>
               <p className="text-xs text-muted-foreground truncate max-w-32">{companyName}</p>

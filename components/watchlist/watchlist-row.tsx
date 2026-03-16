@@ -7,7 +7,14 @@ import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
 import { useSimulationDate } from '@/context/simulation-date'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Loader2, MoreVertical } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 
 interface WatchlistRowProps {
   symbol: string
@@ -20,15 +27,13 @@ interface QuoteData {
   change?: string
   percent_change?: string
   fifty_two_week?: { low: string; high: string }
-  open?: string
-  high?: string
-  low?: string
   is_historical?: boolean
 }
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
+
 
 export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
   const { simulationDate } = useSimulationDate()
@@ -37,14 +42,14 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
   const [sparkData, setSparkData] = useState<{ value: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [buyOpen, setBuyOpen] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
       const dateParam = simulationDate ? `&date=${simulationDate}` : ''
+      const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
       const [quoteRes, tsRes] = await Promise.all([
         fetch(`/api/market/quote?symbol=${symbol}${dateParam}`),
-        fetch(`/api/market/timeseries?symbol=${symbol}&interval=1h&outputsize=24${simulationDate ? `&end_date=${simulationDate}` : ''}`),
+        fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=30${endParam}`),
       ])
       const quoteData = await quoteRes.json()
       const tsData = await tsRes.json()
@@ -54,7 +59,6 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
         const sorted = [...tsData.values].reverse()
         setSparkData(sorted.map((v: { close: string }) => ({ value: parseFloat(v.close) })))
       }
-      setLastUpdated(new Date())
     } finally {
       setLoading(false)
     }
@@ -77,53 +81,56 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
     ? ((price - week52Low) / (week52High - week52Low)) * 100
     : 50
 
+  const changeColor = positive ? 'text-green-500' : 'text-red-500'
+
   return (
     <>
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors">
-        {/* Symbol + name */}
-        <div className="w-48 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
-              {symbol.slice(0, 2)}
-            </div>
-            <div>
-              <p className="font-semibold text-sm">{symbol}</p>
-              <p className="text-xs text-muted-foreground truncate max-w-32">{companyName}</p>
-            </div>
+      <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/20 transition-colors">
+
+        {/* Symbol + company */}
+        <div className="w-52 shrink-0 flex items-center gap-3">
+          <SymbolAvatar symbol={symbol} size={36} />
+          <div className="min-w-0">
+            <p className="font-bold text-sm leading-tight">{symbol}</p>
+            <p className="text-xs text-muted-foreground truncate max-w-[140px]">{companyName}</p>
           </div>
         </div>
 
-        {/* Change 1D */}
-        <div className="w-24 shrink-0">
+        {/* 1D Change */}
+        <div className="w-28 shrink-0">
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : (
-            <div className={positive ? 'text-green-500' : 'text-red-500'}>
-              <p className="text-sm font-medium">{positive ? '+' : ''}{fmt(change)}</p>
-              <p className="text-xs">({positive ? '+' : ''}{changePct.toFixed(2)}%)</p>
+            <div className={changeColor}>
+              <p className="text-base font-bold leading-tight">
+                {positive ? '+' : ''}{fmt(change)}
+              </p>
+              <p className="text-xs font-medium opacity-80">
+                {positive ? '+' : ''}{changePct.toFixed(2)}%
+              </p>
             </div>
           )}
         </div>
 
-        {/* Sparkline */}
-        <div className="w-24 shrink-0">
-          <Sparkline data={sparkData} positive={positive} />
+        {/* 30-day sparkline */}
+        <div className="w-36 shrink-0">
+          {!loading && <Sparkline data={sparkData} positive={positive} />}
         </div>
 
-        {/* Sell price (red) */}
+        {/* Sell price */}
         <div className="w-28 shrink-0">
-          {loading ? null : (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-full px-3 py-1 text-center">
-              <span className="text-sm font-semibold text-red-400">{fmt(price)}</span>
+          {!loading && price > 0 && (
+            <div className="bg-muted rounded-xl px-3 py-1.5 text-center">
+              <span className="text-sm font-semibold tabular-nums">{fmt(price)}</span>
             </div>
           )}
         </div>
 
-        {/* Buy price (green) */}
+        {/* Buy price */}
         <div className="w-28 shrink-0">
-          {loading ? null : (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-full px-3 py-1 text-center">
-              <span className="text-sm font-semibold text-green-400">{fmt(price)}</span>
+          {!loading && price > 0 && (
+            <div className="bg-muted rounded-xl px-3 py-1.5 text-center">
+              <span className="text-sm font-semibold tabular-nums">{fmt(price)}</span>
             </div>
           )}
         </div>
@@ -133,12 +140,12 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
           {!loading && week52High > 0 && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{fmt(week52Low)}</span>
-                <span>{fmt(week52High)}</span>
+                <span className="tabular-nums">{fmt(week52Low)}</span>
+                <span className="tabular-nums">{fmt(week52High)}</span>
               </div>
-              <div className="h-1.5 bg-muted rounded-full relative">
+              <div className="h-1 bg-muted rounded-full relative">
                 <div
-                  className="absolute h-2.5 w-2.5 rounded-full bg-foreground border-2 border-background -top-0.5 -translate-x-1/2"
+                  className="absolute h-3 w-3 rounded-full bg-foreground border-2 border-background -top-1 -translate-x-1/2 shadow"
                   style={{ left: `${Math.min(Math.max(rangePct, 2), 98)}%` }}
                 />
               </div>
@@ -146,31 +153,31 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
           )}
         </div>
 
-        {/* Last updated */}
-        {lastUpdated && (
-          <div className="hidden xl:block text-xs text-muted-foreground w-28 shrink-0 text-right">
-            {lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        )}
-
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
           <Button
             size="sm"
-            className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
+            className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-5 font-semibold"
             disabled={loading || price === 0}
             onClick={() => setBuyOpen(true)}
           >
             Buy
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
+              >
+                Remove from watchlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
