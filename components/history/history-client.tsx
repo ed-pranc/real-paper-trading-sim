@@ -9,6 +9,7 @@ import { PnLChart } from '@/components/history/pnl-chart'
 import { MonthlyReturns } from '@/components/history/monthly-returns'
 import { WinRateRing } from '@/components/history/win-rate-ring'
 import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
+import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 
 interface Transaction {
   id: string
@@ -229,8 +230,12 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
                       {t.type === 'buy' ? <ArrowDownCircle className="h-5 w-5 text-green-500" /> : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
                     </div>
                     <div className="w-32 shrink-0">
-                      <p className="font-semibold text-sm">{t.symbol}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
+                      <StockDetailSheet symbol={t.symbol} companyName={t.company_name} simulationDate={t.simulation_date}>
+                        <div className="cursor-pointer hover:opacity-80 transition-opacity">
+                          <p className="font-semibold text-sm">{t.symbol}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
+                        </div>
+                      </StockDetailSheet>
                     </div>
                     <div className="w-20 shrink-0">
                       <Badge className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`} variant="outline">

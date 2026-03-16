@@ -7,6 +7,7 @@ import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2 } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
+import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 
 interface PortfolioRowProps {
   symbol: string
@@ -62,13 +63,15 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
       <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors">
         {/* Symbol + name */}
         <div className="w-48 shrink-0">
-          <div className="flex items-center gap-2">
-            <SymbolAvatar symbol={symbol} size={32} />
-            <div>
-              <p className="font-semibold text-sm">{symbol}</p>
-              <p className="text-xs text-muted-foreground truncate max-w-32">{companyName}</p>
+          <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+              <SymbolAvatar symbol={symbol} size={32} />
+              <div>
+                <p className="font-semibold text-sm">{symbol}</p>
+                <p className="text-xs text-muted-foreground truncate max-w-32">{companyName}</p>
+              </div>
             </div>
-          </div>
+          </StockDetailSheet>
         </div>
 
         {/* Current price */}

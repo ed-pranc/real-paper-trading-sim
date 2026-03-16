@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
+import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
 
 interface WatchlistRowProps {
@@ -81,13 +82,15 @@ export function WatchlistRow({
       <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/20 transition-colors">
 
         {/* Symbol + company */}
-        <div className="w-52 shrink-0 flex items-center gap-3">
-          <SymbolAvatar symbol={symbol} size={36} />
-          <div className="min-w-0">
-            <p className="font-bold text-sm leading-tight">{symbol}</p>
-            <p className="text-xs text-muted-foreground truncate max-w-[140px]">{companyName}</p>
+        <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
+          <div className="w-52 shrink-0 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <SymbolAvatar symbol={symbol} size={36} />
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight">{symbol}</p>
+              <p className="text-xs text-muted-foreground truncate max-w-[140px]">{companyName}</p>
+            </div>
           </div>
-        </div>
+        </StockDetailSheet>
 
         {/* 1D Change */}
         <div className="w-28 shrink-0">

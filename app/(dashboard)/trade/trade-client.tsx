@@ -11,6 +11,7 @@ import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2, Search, TrendingUp, TrendingDown } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
+import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 
 interface SearchResult {
   symbol: string
@@ -147,18 +148,20 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
           <Card>
             <CardContent className="pt-5 space-y-4">
               {/* Symbol header */}
-              <div className="flex items-center gap-3">
-                <SymbolAvatar symbol={symbol} size={40} />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-bold">{symbol}</h2>
-                    {simulationDate && (
-                      <Badge variant="secondary" className="text-xs">SIM</Badge>
-                    )}
+              <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
+                <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+                  <SymbolAvatar symbol={symbol} size={40} />
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-bold">{symbol}</h2>
+                      {simulationDate && (
+                        <Badge variant="secondary" className="text-xs">SIM</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{companyName}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{companyName}</p>
                 </div>
-              </div>
+              </StockDetailSheet>
 
               {/* Price */}
               <div>

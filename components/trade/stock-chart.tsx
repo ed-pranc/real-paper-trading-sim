@@ -26,27 +26,42 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
   const [data, setData] = useState<{ date: string; price: number; volume: number }[]>([])
   const [loading, setLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [isFallback, setIsFallback] = useState(false)
 
   useEffect(() => {
     if (!symbol) return
     setLoading(true)
+    setIsFallback(false)
+
+    async function fetchTimeseries(interval: string, outputsize: string) {
+      const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
+      const res = await fetch(
+        `/api/market/timeseries?symbol=${symbol}&interval=${interval}&outputsize=${outputsize}${endParam}`
+      )
+      const json = await res.json()
+      const values: { datetime: string; close: string; volume?: string }[] = json?.values ?? []
+      return [...values]
+        .sort((a, b) => a.datetime.localeCompare(b.datetime))
+        .map(v => ({
+          date: v.datetime.length > 10 ? v.datetime.slice(11, 16) : v.datetime,
+          price: parseFloat(v.close),
+          volume: parseFloat(v.volume ?? '0'),
+        }))
+    }
 
     async function fetchChart() {
       const cfg = PERIOD_CONFIG[period]
-      const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
       try {
-        const res = await fetch(
-          `/api/market/timeseries?symbol=${symbol}&interval=${cfg.interval}&outputsize=${cfg.outputsize}${endParam}`
-        )
-        const json = await res.json()
-        const values: { datetime: string; close: string; volume?: string }[] = json?.values ?? []
-        const sorted = [...values]
-          .sort((a, b) => a.datetime.localeCompare(b.datetime))
-          .map(v => ({
-            date: v.datetime.length > 10 ? v.datetime.slice(11, 16) : v.datetime,
-            price: parseFloat(v.close),
-            volume: parseFloat(v.volume ?? '0'),
-          }))
+        let sorted = await fetchTimeseries(cfg.interval, cfg.outputsize)
+
+        // 1D after market hours returns <2 points — fall back to 30 daily bars
+        if (period === '1D' && sorted.length < 2) {
+          sorted = await fetchTimeseries('1day', '30')
+          setIsFallback(sorted.length >= 2)
+        } else {
+          setIsFallback(false)
+        }
+
         setData(sorted)
         setLastUpdated(new Date().toLocaleTimeString())
       } finally {
@@ -67,7 +82,7 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
     <div className="space-y-3">
       {/* Period selector + last updated */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1">
+        <div className="flex gap-1 items-center">
           {PERIODS.map(p => (
             <Button
               key={p}
@@ -76,7 +91,7 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
               className="rounded-full h-7 px-3 text-xs"
               onClick={() => setPeriod(p)}
             >
-              {p}
+              {p === '1D' && isFallback ? '30D' : p}
             </Button>
           ))}
         </div>

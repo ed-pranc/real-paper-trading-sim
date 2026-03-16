@@ -6,6 +6,8 @@ import { AppSidebar } from '@/components/layout/app-sidebar'
 import { WalletFooter } from '@/components/layout/wallet-footer'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { WalletProvider } from '@/context/wallet'
+import { usePriceAlertChecker } from '@/hooks/use-price-alert-checker'
+import { PriceAlertDialog } from '@/components/stock/price-alert-dialog'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -13,11 +15,13 @@ interface DashboardShellProps {
   nickname: string
 }
 
-export function DashboardShell({ children, userId, nickname }: DashboardShellProps) {
+function DashboardShellInner({ children, userId, nickname }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { triggeredAlert, dismiss } = usePriceAlertChecker(userId)
 
   return (
-    <WalletProvider userId={userId}>
+    <>
+      <PriceAlertDialog alert={triggeredAlert} onDismiss={dismiss} />
       <div className="flex flex-col h-screen bg-muted/40">
         <AppHeader onMenuToggle={() => setSidebarOpen(true)} nickname={nickname} />
 
@@ -44,6 +48,16 @@ export function DashboardShell({ children, userId, nickname }: DashboardShellPro
 
         <WalletFooter />
       </div>
+    </>
+  )
+}
+
+export function DashboardShell({ children, userId, nickname }: DashboardShellProps) {
+  return (
+    <WalletProvider userId={userId}>
+      <DashboardShellInner userId={userId} nickname={nickname}>
+        {children}
+      </DashboardShellInner>
     </WalletProvider>
   )
 }
