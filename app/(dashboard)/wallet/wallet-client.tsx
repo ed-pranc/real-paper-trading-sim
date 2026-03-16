@@ -33,6 +33,14 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
+      {/* Full-width header */}
+      <div className="col-span-12">
+        <h1 className="text-2xl font-bold">Wallet</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Your virtual trading balance. Deposit funds, track available cash, and monitor overall account value.
+        </p>
+      </div>
+
       {/* Hero balance card — full width */}
       <div className="col-span-12">
         <Card>

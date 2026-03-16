@@ -90,15 +90,16 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
 
   return (
     <div className="grid grid-cols-12 gap-6">
-      {/* Left: header + account card */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Profile</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage your personal details. Your nickname appears in the sidebar and header.
-          </p>
-        </div>
+      {/* Full-width header */}
+      <div className="col-span-12">
+        <h1 className="text-2xl font-bold">Profile</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Manage your personal details. Your nickname appears in the sidebar and header.
+        </p>
+      </div>
 
+      {/* Left: account card */}
+      <div className="col-span-12 lg:col-span-3 space-y-6">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">

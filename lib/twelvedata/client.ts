@@ -28,7 +28,6 @@ export async function getQuote(symbol: string, date?: string) {
     const data = await tdFetch('/time_series', {
       symbol,
       interval: '1day',
-      start_date: date,
       end_date: date,
       outputsize: '1',
     })

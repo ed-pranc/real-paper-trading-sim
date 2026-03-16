@@ -30,7 +30,6 @@ export async function GET(request: Request) {
       const ts = await tdFetch('/time_series', {
         symbol,
         interval: '1day',
-        start_date: date,
         end_date: date,
         outputsize: '1',
       })
