@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DepositModal } from '@/components/wallet/deposit-modal'
+import { CashDonut } from '@/components/wallet/cash-donut'
 import { PlusCircle, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface WalletSummary {
@@ -41,52 +42,44 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
         </p>
       </div>
 
-      {/* Hero balance card — full width */}
+      {/* Hero balance card */}
       <div className="col-span-12">
         <Card>
           <CardContent className="pt-6 pb-6">
-            <div className="flex items-start justify-between gap-6 flex-wrap">
-              {/* Total value */}
-              <div>
-                <p className="text-sm text-muted-foreground">Your Total Value</p>
-                <p className="text-4xl font-bold mt-1">{fmt(summary.total)}</p>
-                {formatTimestamp(summary.updatedAt) && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimestamp(summary.updatedAt)}
-                  </p>
-                )}
-              </div>
-
-              {/* Progress bar + deposit */}
-              <div className="flex-1 min-w-48 space-y-3">
-                <div className="space-y-1">
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-green-500 rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(investedPct, 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">{investedPct.toFixed(0)}% Invested</p>
+            <div className="flex items-center justify-between gap-6 flex-wrap">
+              {/* Total value + deposit */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Your Total Value</p>
+                  <p className="text-4xl font-bold mt-1">{fmt(summary.total)}</p>
+                  {formatTimestamp(summary.updatedAt) && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatTimestamp(summary.updatedAt)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-xs">USD</Badge>
+                  <Button
+                    className="rounded-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => setDepositOpen(true)}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Deposit
+                  </Button>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-xs">USD</Badge>
-                <Button
-                  className="rounded-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => setDepositOpen(true)}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Deposit
-                </Button>
-              </div>
+              {/* Donut chart */}
+              {summary.total > 0 && (
+                <CashDonut cash={summary.cash} invested={summary.invested} />
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Summary stats row — 4 cards */}
+      {/* Summary stats row */}
       <div className="col-span-12">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -126,7 +119,7 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
         </div>
       </div>
 
-      {/* Account detail — full width */}
+      {/* Account detail */}
       <div className="col-span-12">
         <Card>
           <CardContent className="pt-4 space-y-3">

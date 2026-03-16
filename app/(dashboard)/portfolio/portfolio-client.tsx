@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PortfolioRow } from '@/components/portfolio/portfolio-row'
 import { PortfolioChart } from '@/components/portfolio/portfolio-chart'
+import { CompositionDonut } from '@/components/portfolio/composition-donut'
 import { useSimulationDate } from '@/context/simulation-date'
 import { useWallet } from '@/context/wallet'
 import { BarChart2 } from 'lucide-react'
@@ -40,30 +41,45 @@ export function PortfolioClient({ positions }: { positions: Position[] }) {
 
       {positions.length > 0 ? (
         <>
-          {/* Summary stats — horizontal row */}
-          <div className="col-span-12">
-            <div className="grid grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="pt-5 pb-5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Invested</p>
-                  <p className="text-2xl font-bold mt-1">{fmt(summary.invested)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-5 pb-5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Unrealised P/L</p>
-                  <p className={`text-2xl font-bold mt-1 ${summary.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {summary.pnl >= 0 ? '+' : ''}{fmt(summary.pnl)}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-5 pb-5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
-                  <p className="text-2xl font-bold mt-1">{fmt(summary.total)}</p>
-                </CardContent>
-              </Card>
-            </div>
+          {/* Summary stats (col-8) + Composition donut (col-4) */}
+          <div className="col-span-12 lg:col-span-8 grid grid-cols-3 gap-4 content-start">
+            <Card>
+              <CardContent className="pt-5 pb-5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Invested</p>
+                <p className="text-2xl font-bold mt-1">{fmt(summary.invested)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 pb-5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Unrealised P/L</p>
+                <p className={`text-2xl font-bold mt-1 ${summary.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {summary.pnl >= 0 ? '+' : ''}{fmt(summary.pnl)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5 pb-5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
+                <p className="text-2xl font-bold mt-1">{fmt(summary.total)}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="col-span-12 lg:col-span-4">
+            <Card className="h-full">
+              <CardHeader className="pb-1 pt-4">
+                <CardTitle className="text-sm">Composition</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center pb-4">
+                <CompositionDonut
+                  positions={positions.map(p => ({
+                    symbol: p.symbol,
+                    quantity: Number(p.quantity),
+                    avgBuyPrice: Number(p.avg_buy_price),
+                  }))}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Portfolio chart — full width */}

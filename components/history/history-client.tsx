@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PnLChart } from '@/components/history/pnl-chart'
+import { MonthlyReturns } from '@/components/history/monthly-returns'
+import { WinRateRing } from '@/components/history/win-rate-ring'
 import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
 
 interface Transaction {
@@ -33,10 +35,6 @@ function fmtDate(iso: string) {
 type SortKey = 'trade_date' | 'symbol' | 'total' | 'pnl'
 type SortDir = 'asc' | 'desc'
 
-interface HistoryClientProps {
-  transactions: Transaction[]
-}
-
 function SortBtn({ k, label, onToggle }: { k: SortKey; label: string; onToggle: (key: SortKey) => void }) {
   return (
     <button
@@ -49,7 +47,7 @@ function SortBtn({ k, label, onToggle }: { k: SortKey; label: string; onToggle: 
   )
 }
 
-export function HistoryClient({ transactions }: HistoryClientProps) {
+export function HistoryClient({ transactions }: { transactions: Transaction[] }) {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('trade_date')
@@ -92,58 +90,77 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
         </p>
       </div>
 
-      {/* Full-width summary stats row */}
-      <div className="col-span-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Trades</p>
-              <p className="text-2xl font-bold mt-1">{transactions.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Money In</p>
-              <p className="text-2xl font-bold mt-1">{fmt(totalIn)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Money Out</p>
-              <p className="text-2xl font-bold mt-1">{fmt(totalOut)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Realised P/L</p>
-              <p className={`text-2xl font-bold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Stats (col-9) + Win Rate ring (col-3) */}
+      <div className="col-span-12 lg:col-span-9 grid grid-cols-2 lg:grid-cols-4 gap-4 content-start">
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Trades</p>
+            <p className="text-2xl font-bold mt-1">{transactions.length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Money In</p>
+            <p className="text-2xl font-bold mt-1">{fmt(totalIn)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Money Out</p>
+            <p className="text-2xl font-bold mt-1">{fmt(totalOut)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Realised P/L</p>
+            <p className={`text-2xl font-bold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Left: filters (col-3) */}
       <div className="col-span-12 lg:col-span-3">
-        <div className="space-y-3">
+        <Card className="h-full min-h-[120px]">
+          <CardContent className="pt-4 h-full">
+            <WinRateRing transactions={transactions} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts: Cumulative P/L (col-7) + Monthly Returns (col-5) */}
+      <div className="col-span-12 lg:col-span-7">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Cumulative Realised P/L</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PnLChart transactions={transactions} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="col-span-12 lg:col-span-5">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Monthly Returns</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MonthlyReturns transactions={transactions} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="col-span-12">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-8">From</span>
-            <Input
-              type="date"
-              value={from}
-              onChange={e => setFrom(e.target.value)}
-              className="h-8 text-xs"
-            />
+            <span className="text-xs text-muted-foreground">From</span>
+            <Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 w-36 text-xs" />
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground w-8">To</span>
-            <Input
-              type="date"
-              value={to}
-              onChange={e => setTo(e.target.value)}
-              className="h-8 text-xs"
-            />
+            <span className="text-xs text-muted-foreground">To</span>
+            <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 w-36 text-xs" />
           </div>
           <div className="flex gap-1">
             {(['all', 'buy', 'sell'] as const).map(t => (
@@ -159,32 +176,18 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
             ))}
           </div>
           {(from || to || typeFilter !== 'all') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs w-full"
-              onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}
-            >
-              Clear filters
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}>
+              Clear
             </Button>
           )}
-          <p className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground ml-auto">
             {filtered.length} of {transactions.length} transactions
-          </p>
+          </span>
         </div>
       </div>
 
-      {/* Right: chart + table (col-9) */}
-      <div className="col-span-12 lg:col-span-9 space-y-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Cumulative Realised P/L Over Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PnLChart transactions={transactions} />
-          </CardContent>
-        </Card>
-
+      {/* Transaction table */}
+      <div className="col-span-12">
         {transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <History className="h-12 w-12 text-muted-foreground mb-4" />
@@ -197,9 +200,7 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
           <Card>
             <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
               <div className="w-8 shrink-0"></div>
-              <div className="w-32 shrink-0">
-                <SortBtn k="symbol" label="Asset" onToggle={toggleSort} />
-              </div>
+              <div className="w-32 shrink-0"><SortBtn k="symbol" label="Asset" onToggle={toggleSort} /></div>
               <div className="w-20 shrink-0 text-xs font-medium text-muted-foreground">Type</div>
               <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Qty</div>
               <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground text-right">Price</div>
@@ -223,24 +224,16 @@ export function HistoryClient({ transactions }: HistoryClientProps) {
               filtered.map(t => {
                 const pnlPositive = (t.pnl ?? 0) >= 0
                 return (
-                  <div
-                    key={t.id}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors last:border-0"
-                  >
+                  <div key={t.id} className="flex items-center gap-3 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors last:border-0">
                     <div className="w-8 shrink-0">
-                      {t.type === 'buy'
-                        ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
-                        : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
+                      {t.type === 'buy' ? <ArrowDownCircle className="h-5 w-5 text-green-500" /> : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
                     </div>
                     <div className="w-32 shrink-0">
                       <p className="font-semibold text-sm">{t.symbol}</p>
                       <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
                     </div>
                     <div className="w-20 shrink-0">
-                      <Badge
-                        className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`}
-                        variant="outline"
-                      >
+                      <Badge className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`} variant="outline">
                         {t.type.toUpperCase()}
                       </Badge>
                     </div>
