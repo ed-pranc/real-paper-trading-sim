@@ -6,6 +6,7 @@ import { Sun, Moon, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { SimulationDateSelector } from '@/components/simulation/simulation-date-selector'
+import { useEffect, useState } from 'react'
 
 interface AppHeaderProps {
   onMenuToggle?: () => void
@@ -15,6 +16,8 @@ interface AppHeaderProps {
 
 export function AppHeader({ onMenuToggle, nickname = 'Trader', avatarUrl }: AppHeaderProps) {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card shrink-0">
@@ -39,7 +42,7 @@ export function AppHeader({ onMenuToggle, nickname = 'Trader', avatarUrl }: AppH
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           aria-label="Toggle theme"
         >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {mounted && (theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />)}
         </Button>
         <Link href="/profile">
           <Avatar className="h-8 w-8 cursor-pointer">

@@ -1,8 +1,14 @@
-export default function WalletPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-2">Wallet</h1>
-      <p className="text-muted-foreground">Manage your virtual funds.</p>
-    </div>
-  )
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { getWalletSummary } from '@/lib/actions/wallet'
+import { WalletClient } from './wallet-client'
+
+export default async function WalletPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const summary = await getWalletSummary(user.id)
+
+  return <WalletClient summary={summary} />
 }

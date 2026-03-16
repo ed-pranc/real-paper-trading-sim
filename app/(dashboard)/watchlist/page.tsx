@@ -1,8 +1,17 @@
-export default function WatchlistPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold mb-2">Watchlist</h1>
-      <p className="text-muted-foreground">Monitor stocks you are interested in.</p>
-    </div>
-  )
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { WatchlistClient } from './watchlist-client'
+
+export default async function WatchlistPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: items } = await supabase
+    .from('watchlist')
+    .select('symbol, company_name, added_at')
+    .eq('user_id', user.id)
+    .order('added_at', { ascending: true })
+
+  return <WatchlistClient items={items ?? []} />
 }
