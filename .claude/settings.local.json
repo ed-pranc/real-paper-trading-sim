@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm create:*)",
+      "Bash(rsync -a \"/Users/mbp2018/Documents/VS Code/rpts-tmp/\" \"/Users/mbp2018/Documents/VS Code/real-paper-trading-sim/\")",
+      "Bash(pnpm dlx:*)"
+    ]
+  }
+}
