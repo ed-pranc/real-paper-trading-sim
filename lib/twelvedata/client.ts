@@ -13,8 +13,15 @@ export async function tdFetch(endpoint: string, params: Record<string, string>) 
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
   const res = await fetch(url.toString(), { next: { revalidate: 60 } })
-  if (!res.ok) throw new Error(`Twelve Data error: ${res.status}`)
-  return res.json()
+  if (!res.ok) throw new Error(`Twelve Data HTTP error: ${res.status}`)
+
+  const json = await res.json()
+  // Twelve Data returns errors as HTTP 200 with { status: "error", code: N, message: "..." }
+  if (json?.status === 'error') {
+    throw new Error(json.message ?? `Twelve Data error code ${json.code}`)
+  }
+
+  return json
 }
 
 /**

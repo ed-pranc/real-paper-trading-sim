@@ -16,11 +16,18 @@ interface Position {
   opened_at: string
 }
 
+interface Snapshot {
+  snapshot_date: string
+  total_value: number
+  cash: number
+  invested: number
+}
+
 function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
-export function PortfolioClient({ positions }: { positions: Position[] }) {
+export function PortfolioClient({ positions, snapshots }: { positions: Position[]; snapshots: Snapshot[] }) {
   const { simulationDate } = useSimulationDate()
   const { summary } = useWallet()
 
@@ -89,7 +96,7 @@ export function PortfolioClient({ positions }: { positions: Position[] }) {
                 <CardTitle className="text-base">Portfolio Value Over Time</CardTitle>
               </CardHeader>
               <CardContent>
-                <PortfolioChart symbols={chartSymbols} simulationDate={simulationDate} />
+                <PortfolioChart symbols={chartSymbols} simulationDate={simulationDate} snapshots={snapshots} />
               </CardContent>
             </Card>
           </div>

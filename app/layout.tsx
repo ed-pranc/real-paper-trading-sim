@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { SimulationDateProvider } from '@/context/simulation-date'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 /** Geist Sans — registered as --font-sans variable */
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <SimulationDateProvider>
             {children}
+            <Toaster position="bottom-right" richColors closeButton />
           </SimulationDateProvider>
         </ThemeProvider>
       </body>

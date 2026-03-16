@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { SearchModal } from '@/components/watchlist/search-modal'
 import { WatchlistRow } from '@/components/watchlist/watchlist-row'
+import { useSimulationDate } from '@/context/simulation-date'
 import { Plus, Eye } from 'lucide-react'
+import { toast } from 'sonner'
+import type { BatchPriceData } from '@/app/api/market/prices/route'
 
 interface WatchlistItem {
   symbol: string
@@ -14,6 +17,41 @@ interface WatchlistItem {
 
 export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
   const [searchOpen, setSearchOpen] = useState(false)
+  const { simulationDate } = useSimulationDate()
+
+  const [prices, setPrices] = useState<Record<string, BatchPriceData>>({})
+  const [priceLoading, setPriceLoading] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+
+  const symbols = items.map(i => i.symbol).join(',')
+
+  const fetchPrices = useCallback(async () => {
+    if (!symbols) return
+    setPriceLoading(true)
+    try {
+      const dateParam = simulationDate ? `&date=${encodeURIComponent(simulationDate)}` : ''
+      const res = await fetch(`/api/market/prices?symbols=${encodeURIComponent(symbols)}${dateParam}`)
+      const data = await res.json()
+      if (!res.ok || data?.error) {
+        toast.error('Price data unavailable', { description: data?.error ?? 'Failed to load prices' })
+      } else {
+        setPrices(data)
+        setLastUpdated(new Date().toLocaleTimeString())
+      }
+    } catch {
+      toast.error('Price data unavailable', { description: 'Failed to connect to price service' })
+    } finally {
+      setPriceLoading(false)
+    }
+  }, [symbols, simulationDate])
+
+  useEffect(() => {
+    fetchPrices()
+    // Only auto-refresh in live mode — sim prices are historical (fixed for a given date)
+    if (simulationDate) return
+    const interval = setInterval(fetchPrices, 60_000)
+    return () => clearInterval(interval)
+  }, [fetchPrices, simulationDate])
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -52,6 +90,10 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
                 key={item.symbol}
                 symbol={item.symbol}
                 companyName={item.company_name}
+                priceData={prices[item.symbol]}
+                priceLoading={priceLoading && !prices[item.symbol]}
+                lastUpdated={lastUpdated}
+                simulationDate={simulationDate}
               />
             ))}
           </div>

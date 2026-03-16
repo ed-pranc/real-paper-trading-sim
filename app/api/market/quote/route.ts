@@ -48,7 +48,8 @@ export async function GET(request: Request) {
       data = await tdFetch('/quote', { symbol })
     }
     return NextResponse.json(data)
-  } catch {
-    return NextResponse.json({ error: 'Quote failed' }, { status: 500 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Quote failed'
+    return NextResponse.json({ error: message }, { status: 503 })
   }
 }

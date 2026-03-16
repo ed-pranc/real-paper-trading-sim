@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
-import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2, MoreVertical } from 'lucide-react'
 import {
   DropdownMenu,
@@ -15,68 +14,62 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
+import type { BatchPriceData } from '@/app/api/market/prices/route'
 
 interface WatchlistRowProps {
   symbol: string
   companyName: string
-}
-
-interface QuoteData {
-  close?: string
-  price?: string
-  change?: string
-  percent_change?: string
-  fifty_two_week?: { low: string; high: string }
-  is_historical?: boolean
+  priceData?: BatchPriceData
+  priceLoading: boolean
+  lastUpdated: string | null
+  simulationDate: string | null
 }
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-
-export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
-  const { simulationDate } = useSimulationDate()
+export function WatchlistRow({
+  symbol,
+  companyName,
+  priceData,
+  priceLoading,
+  lastUpdated,
+  simulationDate,
+}: WatchlistRowProps) {
   const router = useRouter()
-  const [quote, setQuote] = useState<QuoteData | null>(null)
   const [sparkData, setSparkData] = useState<{ value: number }[]>([])
-  const [loading, setLoading] = useState(true)
   const [buyOpen, setBuyOpen] = useState(false)
 
-  const fetchData = useCallback(async () => {
+  // Sparkline fetches independently — it's low-priority and staggered naturally
+  const fetchSparkline = useCallback(async () => {
+    const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
     try {
-      const dateParam = simulationDate ? `&date=${simulationDate}` : ''
-      const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
-      const [quoteRes, tsRes] = await Promise.all([
-        fetch(`/api/market/quote?symbol=${symbol}${dateParam}`),
-        fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=30${endParam}`),
-      ])
-      const quoteData = await quoteRes.json()
-      const tsData = await tsRes.json()
-
-      setQuote(quoteData)
-      if (tsData?.values) {
-        const sorted = [...tsData.values].reverse()
+      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=30${endParam}`)
+      const data = await res.json()
+      if (data?.values) {
+        const sorted = [...data.values].reverse()
         setSparkData(sorted.map((v: { close: string }) => ({ value: parseFloat(v.close) })))
       }
-    } finally {
-      setLoading(false)
+    } catch {
+      // sparkline failure is silent
     }
   }, [symbol, simulationDate])
 
   useEffect(() => {
-    setLoading(true)
-    fetchData()
-    const interval = setInterval(fetchData, 60_000)
+    fetchSparkline()
+    // Historical sparklines don't change — only poll in live mode
+    if (simulationDate) return
+    const interval = setInterval(fetchSparkline, 60_000)
     return () => clearInterval(interval)
-  }, [fetchData])
+  }, [fetchSparkline, simulationDate])
 
-  const price = parseFloat(quote?.close ?? quote?.price ?? '0')
-  const change = parseFloat(quote?.change ?? '0')
-  const changePct = parseFloat(quote?.percent_change ?? '0')
+  const price = priceData?.price ?? 0
+  const change = priceData?.change ?? 0
+  const changePct = priceData?.changePct ?? 0
   const positive = change >= 0
-  const week52Low = parseFloat(quote?.fifty_two_week?.low ?? '0')
-  const week52High = parseFloat(quote?.fifty_two_week?.high ?? '0')
+  const week52Low = parseFloat(priceData?.fifty_two_week?.low ?? '0')
+  const week52High = parseFloat(priceData?.fifty_two_week?.high ?? '0')
   const rangePct = week52High > week52Low
     ? ((price - week52Low) / (week52High - week52Low)) * 100
     : 50
@@ -98,8 +91,13 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
 
         {/* 1D Change */}
         <div className="w-28 shrink-0">
-          {loading ? (
+          {priceLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : priceData?.is_historical ? (
+            <div className="text-muted-foreground">
+              <p className="text-base font-bold leading-tight">${fmt(price)}</p>
+              <p className="text-xs opacity-70">Historical</p>
+            </div>
           ) : (
             <div className={changeColor}>
               <p className="text-base font-bold leading-tight">
@@ -114,30 +112,36 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
 
         {/* 30-day sparkline */}
         <div className="w-36 shrink-0">
-          {!loading && <Sparkline data={sparkData} positive={positive} />}
+          {sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
         </div>
 
         {/* Sell price */}
         <div className="w-28 shrink-0">
-          {!loading && price > 0 && (
-            <div className="bg-muted rounded-xl px-3 py-1.5 text-center">
+          {!priceLoading && price > 0 && (
+            <div className="bg-muted rounded-xl px-3 py-1 text-center">
               <span className="text-sm font-semibold tabular-nums">{fmt(price)}</span>
+              {lastUpdated && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">Updated {lastUpdated}</p>
+              )}
             </div>
           )}
         </div>
 
         {/* Buy price */}
         <div className="w-28 shrink-0">
-          {!loading && price > 0 && (
-            <div className="bg-muted rounded-xl px-3 py-1.5 text-center">
-              <span className="text-sm font-semibold tabular-nums">{fmt(price)}</span>
+          {!priceLoading && price > 0 && (
+            <div className="bg-green-600/10 border border-green-600/20 rounded-xl px-3 py-1 text-center">
+              <span className="text-sm font-semibold tabular-nums text-green-500">{fmt(price)}</span>
+              {lastUpdated && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">Updated {lastUpdated}</p>
+              )}
             </div>
           )}
         </div>
 
-        {/* 52W Range */}
+        {/* 52W Range — hidden in sim mode (historical quote doesn't include 52W data) */}
         <div className="flex-1 min-w-0">
-          {!loading && week52High > 0 && (
+          {!priceLoading && week52High > 0 && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span className="tabular-nums">{fmt(week52Low)}</span>
@@ -158,7 +162,7 @@ export function WatchlistRow({ symbol, companyName }: WatchlistRowProps) {
           <Button
             size="sm"
             className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-5 font-semibold"
-            disabled={loading || price === 0}
+            disabled={priceLoading || price === 0}
             onClick={() => setBuyOpen(true)}
           >
             Buy

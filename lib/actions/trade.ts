@@ -3,6 +3,38 @@
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * Saves a portfolio snapshot after a trade.
+ * total_value = cash + sum(position.quantity × avg_buy_price).
+ * This is accurate at trade time because the just-traded shares were priced at market.
+ */
+async function savePortfolioSnapshot(
+  supabase: SupabaseClient,
+  userId: string,
+  simulationDate: string | null
+) {
+  const [walletRes, positionsRes] = await Promise.all([
+    supabase.from('wallet_balance').select('cash_balance').eq('user_id', userId).single(),
+    supabase.from('positions').select('quantity, avg_buy_price').eq('user_id', userId),
+  ])
+
+  const cash = Number(walletRes.data?.cash_balance ?? 0)
+  const invested = (positionsRes.data ?? []).reduce(
+    (sum, p) => sum + Number(p.quantity) * Number(p.avg_buy_price),
+    0
+  )
+
+  await supabase.from('portfolio_snapshots').insert({
+    user_id: userId,
+    cash,
+    invested,
+    pnl: 0,
+    total_value: cash + invested,
+    snapshot_date: simulationDate ?? new Date().toISOString().split('T')[0],
+  })
+}
 
 const TradeSchema = z.object({
   symbol: z.string().min(1),
@@ -88,6 +120,8 @@ export async function executeBuy(
     simulation_date: parsed.simulationDate,
   })
 
+  await savePortfolioSnapshot(supabase, user.id, parsed.simulationDate)
+
   revalidatePath('/', 'layout')
 }
 
@@ -161,6 +195,8 @@ export async function executeSell(
     trade_date: new Date().toISOString(),
     simulation_date: parsed.simulationDate,
   })
+
+  await savePortfolioSnapshot(supabase, user.id, parsed.simulationDate)
 
   revalidatePath('/', 'layout')
 }

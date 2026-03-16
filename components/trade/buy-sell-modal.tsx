@@ -9,6 +9,7 @@ import { executeBuy, executeSell } from '@/lib/actions/trade'
 import { useWallet } from '@/context/wallet'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface BuySellModalProps {
   open: boolean
@@ -45,14 +46,22 @@ export function BuySellModal({
       try {
         if (tab === 'buy') {
           await executeBuy(symbol, companyName, shares, price, simulationDate)
+          toast.success(`Bought ${shares.toFixed(4)} shares of ${symbol}`, {
+            description: `$${(shares * price).toFixed(2)} at $${price.toFixed(2)}/share`,
+          })
         } else {
           await executeSell(symbol, companyName, shares, price, simulationDate)
+          toast.success(`Sold ${shares.toFixed(4)} shares of ${symbol}`, {
+            description: `$${(shares * price).toFixed(2)} at $${price.toFixed(2)}/share`,
+          })
         }
         await refresh()
         setValue('')
         onClose()
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Trade failed')
+        const msg = e instanceof Error ? e.message : 'Trade failed'
+        setError(msg)
+        toast.error('Trade failed', { description: msg })
       }
     })
   }
