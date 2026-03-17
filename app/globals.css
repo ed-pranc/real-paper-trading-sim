@@ -4,7 +4,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Vega · Olive base · Emerald accent · Small radius · Translucent ─── */
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+}
+
+/* ─── Nova · Zinc base · Green accent · Large radius · Solid ─── */
 :root {
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
@@ -115,9 +120,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  /* Geist Mono as primary UI font, Geist Sans as fallback */
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-mono: ui-monospace, monospace;
 }
 
 @layer base {
@@ -125,17 +129,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply font-mono antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-background text-foreground;
   }
   html {
     @apply font-sans;
   }
 }
 
-/* Translucent glass effect on cards and popovers in dark mode */
-.dark [data-slot="card"],
-.dark [data-slot="popover"],
-.dark [data-slot="dialog"] {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
