@@ -62,11 +62,8 @@ export function WatchlistRow({
 
   useEffect(() => {
     fetchSparkline()
-    // Historical sparklines don't change — only poll in live mode
-    if (simulationDate) return
-    const interval = setInterval(fetchSparkline, 60_000)
-    return () => clearInterval(interval)
-  }, [fetchSparkline, simulationDate])
+    // 1Y daily sparkline: bars close once per day — no polling needed
+  }, [fetchSparkline])
 
   const price = priceData?.price ?? 0
   const change = priceData?.change ?? 0

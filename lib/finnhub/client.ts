@@ -126,10 +126,7 @@ export async function getStockCandles(
     to: String(toTs),
   }, revalidate)
 
-  if (data?.s !== 'ok' || !Array.isArray(data.c)) {
-    console.warn(`[finnhub candle] ${symbol} ${resolution}: s=${data?.s}, bars=${Array.isArray(data?.c) ? data.c.length : 'n/a'}`)
-    return []
-  }
+  if (data?.s !== 'ok' || !Array.isArray(data.c)) return []
 
   const isIntraday = ['15min', '30min', '1h', '2h', '4h', '8h'].includes(interval)
   return (data.t as number[]).map((ts: number, i: number) => ({
