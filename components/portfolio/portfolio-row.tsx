@@ -8,19 +8,32 @@ import { useSimulationDate } from '@/context/simulation-date'
 import { Loader2 } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
+import { cn, fmtDate } from '@/lib/utils'
 
 interface PortfolioRowProps {
   symbol: string
   companyName: string
   quantity: number
   avgBuyPrice: number
+  openedDate: string
+  isFuture?: boolean
+  onPriceLoaded?: (symbol: string, price: number) => void
 }
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: PortfolioRowProps) {
+
+export function PortfolioRow({
+  symbol,
+  companyName,
+  quantity,
+  avgBuyPrice,
+  openedDate,
+  isFuture = false,
+  onPriceLoaded,
+}: PortfolioRowProps) {
   const { simulationDate } = useSimulationDate()
   const router = useRouter()
   const [price, setPrice] = useState<number | null>(null)
@@ -35,10 +48,11 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
       const data = await res.json()
       const p = parseFloat(data?.close ?? data?.price ?? '0')
       setPrice(p)
+      onPriceLoaded?.(symbol, p)
     } finally {
       setLoading(false)
     }
-  }, [symbol, simulationDate])
+  }, [symbol, simulationDate, onPriceLoaded])
 
   useEffect(() => {
     setLoading(true)
@@ -60,7 +74,12 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
 
   return (
     <>
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/30 transition-colors">
+      <div
+        className={cn(
+          'flex items-center gap-4 px-4 py-3 border-b border-border transition-colors',
+          isFuture ? 'opacity-40' : 'hover:bg-accent/30'
+        )}
+      >
         {/* Symbol + name */}
         <div className="w-48 shrink-0">
           <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
@@ -92,6 +111,11 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
           <p className="text-sm">${fmt(avgBuyPrice)}</p>
         </div>
 
+        {/* Trade Date */}
+        <div className="w-28 shrink-0">
+          <p className="text-sm text-muted-foreground">{fmtDate(openedDate)}</p>
+        </div>
+
         {/* P/L */}
         <div className="w-28 shrink-0">
           <p className={`text-sm font-semibold ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
@@ -107,36 +131,42 @@ export function PortfolioRow({ symbol, companyName, quantity, avgBuyPrice }: Por
           <p className="text-sm font-medium">${fmt(currentValue)}</p>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
-            disabled={loading || !price}
-            onClick={() => openModal('sell')}
-          >
-            Close
-          </Button>
-          <Button
-            size="sm"
-            className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
-            disabled={loading || !price}
-            onClick={() => openModal('buy')}
-          >
-            Trade
-          </Button>
+        {/* Actions — hidden for future positions */}
+        <div className="flex items-center gap-2 shrink-0 w-36 justify-end">
+          {!isFuture && (
+            <>
+              <Button
+                size="sm"
+                className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
+                disabled={loading || !price}
+                onClick={() => openModal('sell')}
+              >
+                Close
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
+                disabled={loading || !price}
+                onClick={() => openModal('buy')}
+              >
+                Trade
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      <BuySellModal
-        open={modalOpen}
-        onClose={() => { setModalOpen(false); router.refresh() }}
-        symbol={symbol}
-        companyName={companyName}
-        price={price ?? avgBuyPrice}
-        mode={modalMode}
-        maxShares={quantity}
-      />
+      {!isFuture && (
+        <BuySellModal
+          open={modalOpen}
+          onClose={() => { setModalOpen(false); router.refresh() }}
+          symbol={symbol}
+          companyName={companyName}
+          price={price ?? avgBuyPrice}
+          mode={modalMode}
+          maxShares={quantity}
+        />
+      )}
     </>
   )
 }

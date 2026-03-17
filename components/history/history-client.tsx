@@ -10,6 +10,7 @@ import { MonthlyReturns } from '@/components/history/monthly-returns'
 import { WinRateRing } from '@/components/history/win-rate-ring'
 import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
+import { fmtDate, fmtDateTime } from '@/lib/utils'
 
 interface Transaction {
   id: string
@@ -28,10 +29,6 @@ function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
-function fmtDate(iso: string) {
-  const d = new Date(iso)
-  return `${d.toLocaleDateString('en-GB')} ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
-}
 
 type SortKey = 'trade_date' | 'symbol' | 'total' | 'pnl'
 type SortDir = 'asc' | 'desc'
@@ -261,11 +258,11 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">{fmtDate(t.trade_date)}</p>
+                      <p className="text-xs text-muted-foreground">{fmtDateTime(t.trade_date)}</p>
                     </div>
                     <div className="hidden xl:block w-28">
                       {t.simulation_date ? (
-                        <Badge variant="secondary" className="text-xs">{t.simulation_date.slice(0, 10)}</Badge>
+                        <Badge variant="secondary" className="text-xs">{fmtDate(t.simulation_date)}</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">Live</span>
                       )}

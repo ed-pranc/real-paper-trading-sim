@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { DepositModal } from '@/components/wallet/deposit-modal'
 import { CashDonut } from '@/components/wallet/cash-donut'
 import { PlusCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { fmtDateTime } from '@/lib/utils'
 
 interface WalletSummary {
   cash: number
@@ -22,8 +23,7 @@ function fmt(n: number) {
 
 function formatTimestamp(ts: string | null) {
   if (!ts) return null
-  const d = new Date(ts)
-  return `Last update at ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}, ${d.toLocaleDateString('en-GB')}`
+  return `Last update at ${fmtDateTime(ts)}`
 }
 
 export function WalletClient({ summary }: { summary: WalletSummary }) {

@@ -7,7 +7,7 @@ export default async function PortfolioPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: positions }, { data: snapshots }] = await Promise.all([
+  const [{ data: positions }, { data: snapshots }, { data: transactions }] = await Promise.all([
     supabase
       .from('positions')
       .select('symbol, company_name, quantity, avg_buy_price, opened_at')
@@ -18,7 +18,18 @@ export default async function PortfolioPage() {
       .select('snapshot_date, total_value, cash, invested')
       .eq('user_id', user.id)
       .order('snapshot_date', { ascending: true }),
+    supabase
+      .from('transactions')
+      .select('symbol, company_name, type, quantity, price, simulation_date, trade_date')
+      .eq('user_id', user.id)
+      .order('trade_date', { ascending: true }),
   ])
 
-  return <PortfolioClient positions={positions ?? []} snapshots={snapshots ?? []} />
+  return (
+    <PortfolioClient
+      positions={positions ?? []}
+      snapshots={snapshots ?? []}
+      transactions={transactions ?? []}
+    />
+  )
 }
