@@ -79,7 +79,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
             <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30">
               <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Markets</div>
               <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Change 1D</div>
-              <div className="w-36 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">1Y Chart</div>
+              <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">1Y Chart</div>
               <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Sell</div>
               <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Buy</div>
               <div className="flex-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">52W Range</div>

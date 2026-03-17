@@ -39,7 +39,7 @@ export function WatchlistRow({
   simulationDate,
 }: WatchlistRowProps) {
   const router = useRouter()
-  const [sparkData, setSparkData] = useState<{ value: number }[]>([])
+  const [sparkData, setSparkData] = useState<{ value: number; datetime: string }[]>([])
   const [buyOpen, setBuyOpen] = useState(false)
 
   // Sparkline fetches independently — it's low-priority and staggered naturally
@@ -50,7 +50,10 @@ export function WatchlistRow({
       const data = await res.json()
       if (data?.values) {
         const sorted = [...data.values].reverse()
-        setSparkData(sorted.map((v: { close: string }) => ({ value: parseFloat(v.close) })))
+        setSparkData(sorted.map((v: { datetime: string; close: string }) => ({
+          value: parseFloat(v.close),
+          datetime: v.datetime,
+        })))
       }
     } catch {
       // sparkline failure is silent
@@ -114,7 +117,7 @@ export function WatchlistRow({
         </div>
 
         {/* 30-day sparkline */}
-        <div className="w-36 shrink-0">
+        <div className="w-52 shrink-0">
           {sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
         </div>
 
