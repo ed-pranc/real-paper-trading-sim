@@ -24,14 +24,21 @@ export function PnLChart({ transactions }: PnLChartProps) {
 
     if (sells.length === 0) return []
 
+    // Prepend a zero baseline one day before the first sell so Recharts
+    // renders a visible line/area even when there is only one data point
+    const firstDate = new Date(sells[0].trade_date.slice(0, 10) + 'T00:00:00')
+    firstDate.setDate(firstDate.getDate() - 1)
+    const baseline = { date: firstDate.toISOString().slice(0, 10), pnl: 0 }
+
     let cumulative = 0
-    return sells.map(t => {
+    const points = sells.map(t => {
       cumulative += Number(t.pnl ?? 0)
       return {
         date: t.trade_date.slice(0, 10),
         pnl: Math.round(cumulative * 100) / 100,
       }
     })
+    return [baseline, ...points]
   }, [transactions])
 
   if (data.length === 0) {
