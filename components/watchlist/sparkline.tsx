@@ -8,9 +8,9 @@ interface SparklineProps {
   positive: boolean
 }
 
-function SparkTooltip({ active, payload }: TooltipProps<number, string>) {
+function SparkTooltip({ active, payload }: TooltipProps<number, string> & { payload?: { payload: { value: number; datetime: string } }[] }) {
   if (!active || !payload?.length) return null
-  const point = payload[0].payload as { value: number; datetime: string }
+  const point = payload[0].payload
   const price = `$${point.value.toFixed(2)}`
   // Append T00:00:00 to parse as local time and avoid UTC timezone shift (e.g. Mar 11 → Mar 10)
   const d = new Date(point.datetime + 'T00:00:00')
