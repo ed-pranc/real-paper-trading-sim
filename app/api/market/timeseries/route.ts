@@ -30,19 +30,27 @@ export async function GET(request: Request) {
 
   const { symbol, interval, outputsize, end_date } = result.data
 
+  // Try Finnhub first (no daily credit limit). Isolate in its own try so any
+  // error (HTTP 403/429/etc.) falls through to the Twelve Data fallback below.
+  let values: { datetime: string; close: string }[] = []
   try {
-    const values = await getStockCandles(symbol, interval, Number(outputsize), end_date)
+    values = await getStockCandles(symbol, interval, Number(outputsize), end_date)
+  } catch (err) {
+    console.warn(`[timeseries] Finnhub threw for ${symbol} ${interval}: ${err}`)
+  }
 
-    if (values.length > 0) {
-      return NextResponse.json({ values })
-    }
+  if (values.length > 0) {
+    return NextResponse.json({ values })
+  }
 
-    // Finnhub returned no data — fall back to Twelve Data (cached 24h for live, 24h for historical)
-    console.warn(`[timeseries] Finnhub returned empty for ${symbol} ${interval} — falling back to Twelve Data`)
+  // Finnhub returned empty or threw — fall back to Twelve Data
+  console.warn(`[timeseries] Falling back to Twelve Data for ${symbol} ${interval}`)
+  try {
     const revalidate = end_date ? 86400 : 300
     const td = await getTimeSeries(symbol, interval, String(outputsize), end_date, revalidate)
     return NextResponse.json({ values: td?.values ?? [] })
-  } catch {
+  } catch (err) {
+    console.error(`[timeseries] Twelve Data also failed for ${symbol}: ${err}`)
     return NextResponse.json({ error: 'Time series failed' }, { status: 500 })
   }
 }
