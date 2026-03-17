@@ -61,6 +61,29 @@ export async function getCompanyNews(
   return Array.isArray(data) ? data : []
 }
 
+/**
+ * Fetch 52-week high/low from Finnhub basic metrics. Cached 24h (changes daily at most).
+ */
+export async function getFinnhubMetric(symbol: string): Promise<{ high52: number; low52: number } | null> {
+  try {
+    const data = await finnhubFetch('/stock/metric', { symbol, metric: '52Week' }, 86400)
+    const h = data?.metric?.['52WeekHigh']
+    const l = data?.metric?.['52WeekLow']
+    if (!h || !l) return null
+    return { high52: Number(h), low52: Number(l) }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Search for symbols via Finnhub — no daily credit cost.
+ * Returns result array: [{ symbol, displaySymbol, description, type }]
+ */
+export async function searchSymbols(query: string) {
+  return finnhubFetch('/search', { q: query }, 300)
+}
+
 // Finnhub resolution codes for each interval
 const INTERVAL_TO_RESOLUTION: Record<string, string> = {
   '15min': '15', '30min': '30', '1h': '60',

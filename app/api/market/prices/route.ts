@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { tdFetch } from '@/lib/twelvedata/client'
-import { getFinnhubQuote } from '@/lib/finnhub/client'
+import { getFinnhubQuote, getFinnhubMetric } from '@/lib/finnhub/client'
 
 export interface BatchPriceData {
   price: number
@@ -54,12 +54,19 @@ export async function GET(request: Request) {
         }
       }
     } else {
-      // Live mode: Finnhub quotes in parallel — no daily credit limit
-      const quotes = await Promise.all(symbolList.map(sym => getFinnhubQuote(sym).catch(() => null)))
+      // Live mode: Finnhub quotes + 52W metrics in parallel — no daily credit limit
+      const [quotes, metrics] = await Promise.all([
+        Promise.all(symbolList.map(sym => getFinnhubQuote(sym).catch(() => null))),
+        Promise.all(symbolList.map(sym => getFinnhubMetric(sym).catch(() => null))),
+      ])
       symbolList.forEach((sym, i) => {
         const q = quotes[i]
+        const m = metrics[i]
         if (q && q.c > 0) {
-          result[sym] = { price: q.c, change: q.d, changePct: q.dp, is_historical: false }
+          result[sym] = {
+            price: q.c, change: q.d, changePct: q.dp, is_historical: false,
+            fifty_two_week: m ? { low: String(m.low52), high: String(m.high52) } : undefined,
+          }
         }
       })
     }

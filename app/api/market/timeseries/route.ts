@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getStockCandles } from '@/lib/finnhub/client'
+import { getTimeSeries } from '@/lib/twelvedata/client'
 
 const QuerySchema = z.object({
   symbol: z.string().min(1).max(20),
@@ -31,7 +32,16 @@ export async function GET(request: Request) {
 
   try {
     const values = await getStockCandles(symbol, interval, Number(outputsize), end_date)
-    return NextResponse.json({ values })
+
+    if (values.length > 0) {
+      return NextResponse.json({ values })
+    }
+
+    // Finnhub returned no data — fall back to Twelve Data (cached 24h for live, 24h for historical)
+    console.warn(`[timeseries] Finnhub returned empty for ${symbol} ${interval} — falling back to Twelve Data`)
+    const revalidate = end_date ? 86400 : 300
+    const td = await getTimeSeries(symbol, interval, String(outputsize), end_date, revalidate)
+    return NextResponse.json({ values: td?.values ?? [] })
   } catch {
     return NextResponse.json({ error: 'Time series failed' }, { status: 500 })
   }

@@ -23,34 +23,18 @@ function symbolColor(s: string) {
 }
 
 /**
- * Try a list of candidate URLs in order. Returns the first one that loads,
- * or '' if all fail.
+ * Resolves logo URL using Parqet CDN (free, no API key, good ETF + stock coverage).
+ * Falls back to '' if the image fails to load, which triggers the colored-initials fallback.
  */
 async function resolveLogoUrl(symbol: string): Promise<string> {
-  // 1. Twelve Data logo API (best for individual stocks)
-  let tdUrl = ''
-  try {
-    const res = await fetch(`/api/market/logo?symbol=${symbol}`)
-    const data = await res.json()
-    tdUrl = data?.url ?? ''
-  } catch { /* ignore */ }
-
-  // 2. Parqet logo CDN (good ETF + stock coverage, free, no key)
-  const parqetUrl = `https://assets.parqet.com/logos/symbol/${symbol}`
-
-  const candidates = [tdUrl, parqetUrl].filter(Boolean)
-
-  for (const url of candidates) {
-    const ok = await new Promise<boolean>(resolve => {
-      const img = new window.Image()
-      img.onload = () => resolve(true)
-      img.onerror = () => resolve(false)
-      img.src = url
-    })
-    if (ok) return url
-  }
-
-  return ''
+  const url = `https://assets.parqet.com/logos/symbol/${symbol}`
+  const ok = await new Promise<boolean>(resolve => {
+    const img = new window.Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+  return ok ? url : ''
 }
 
 export function SymbolAvatar({ symbol, size = 36, className = '' }: SymbolAvatarProps) {
