@@ -81,8 +81,10 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
 
   useEffect(() => {
     fetchQuote()
-    const interval = setInterval(fetchQuote, 60_000)
-    return () => clearInterval(interval)
+    if (!simulationDate) {
+      const interval = setInterval(fetchQuote, 60_000)
+      return () => clearInterval(interval)
+    }
   }, [fetchQuote])
 
   function selectSymbol(sym: string, name: string) {

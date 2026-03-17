@@ -70,8 +70,10 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
     }
 
     fetchChart()
-    const interval = setInterval(fetchChart, 60_000)
-    return () => clearInterval(interval)
+    if (!simulationDate) {
+      const interval = setInterval(fetchChart, 60_000)
+      return () => clearInterval(interval)
+    }
   }, [symbol, period, simulationDate])
 
   const positive = data.length < 2 || data[data.length - 1]?.price >= data[0]?.price

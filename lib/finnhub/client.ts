@@ -105,8 +105,11 @@ export async function getStockCandles(
 
   if (data?.s !== 'ok' || !Array.isArray(data.c)) return []
 
+  const isIntraday = ['15min', '30min', '1h', '2h', '4h', '8h'].includes(interval)
   return (data.t as number[]).map((ts: number, i: number) => ({
-    datetime: new Date(ts * 1000).toISOString().slice(0, 10),
+    datetime: isIntraday
+      ? new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ')
+      : new Date(ts * 1000).toISOString().slice(0, 10),
     close: String((data.c as number[])[i]),
   }))
 }
