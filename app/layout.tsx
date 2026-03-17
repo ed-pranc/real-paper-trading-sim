@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes'
 import { SimulationDateProvider } from '@/context/simulation-date'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
+import { cn } from "@/lib/utils";
 
 /** Geist Sans — registered as --font-sans variable */
 const geistSans = Geist({ variable: '--font-sans', subsets: ['latin'] })
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={cn(geistMono.variable, "font-sans", geistSans.variable)}
     >
       <body className="font-mono antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
