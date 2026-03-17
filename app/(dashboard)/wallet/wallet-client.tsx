@@ -8,6 +8,7 @@ import { DepositModal } from '@/components/wallet/deposit-modal'
 import { CashDonut } from '@/components/wallet/cash-donut'
 import { PlusCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import { fmtDateTime } from '@/lib/utils'
+import { LABELS } from '@/lib/labels'
 
 interface WalletSummary {
   cash: number
@@ -84,7 +85,7 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Available</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.cash}</p>
               <p className="text-2xl font-bold mt-1">{fmt(summary.cash)}</p>
               <p className="text-xs text-muted-foreground mt-1">Ready to invest</p>
             </CardContent>
@@ -92,7 +93,7 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
 
           <Card>
             <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Invested</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.invested}</p>
               <p className="text-2xl font-bold mt-1">{fmt(summary.invested)}</p>
               <p className="text-xs text-muted-foreground mt-1">Open positions</p>
             </CardContent>
@@ -100,20 +101,19 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
 
           <Card>
             <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Profit / Loss</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.unrealisedPnl}</p>
               <p className={`text-2xl font-bold mt-1 flex items-center gap-1 ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
                 {pnlPositive ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                 {fmt(summary.pnl)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Unrealised</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Equity</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.totalValue}</p>
               <p className="text-2xl font-bold mt-1">{fmt(summary.total)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Cash + Invested + P/L</p>
+              <p className="text-xs text-muted-foreground mt-1">Cash + Invested + Unrealised P/L</p>
             </CardContent>
           </Card>
         </div>

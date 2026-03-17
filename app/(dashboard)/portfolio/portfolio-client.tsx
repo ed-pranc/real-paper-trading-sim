@@ -8,6 +8,7 @@ import { CompositionDonut } from '@/components/portfolio/composition-donut'
 import { useSimulationDate } from '@/context/simulation-date'
 import { useWallet } from '@/context/wallet'
 import { BarChart2 } from 'lucide-react'
+import { LABELS } from '@/lib/labels'
 
 interface Position {
   symbol: string
@@ -210,13 +211,13 @@ export function PortfolioClient({
           <div className="col-span-12 lg:col-span-8 grid grid-cols-3 gap-4 content-start">
             <Card>
               <CardContent className="pt-5 pb-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Invested</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.invested}</p>
                 <p className="text-2xl font-bold mt-1">{fmt(displaySummary.invested)}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-5 pb-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Unrealised P/L</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.unrealisedPnl}</p>
                 <p className={`text-2xl font-bold mt-1 ${(displaySummary.pnl ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                   {displaySummary.pnl !== null
                     ? `${displaySummary.pnl >= 0 ? '+' : ''}${fmt(displaySummary.pnl)}`
@@ -226,7 +227,7 @@ export function PortfolioClient({
             </Card>
             <Card>
               <CardContent className="pt-5 pb-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.totalValue}</p>
                 <p className="text-2xl font-bold mt-1">
                   {displaySummary.total !== null ? fmt(displaySummary.total) : '—'}
                 </p>
