@@ -52,13 +52,15 @@ export async function GET(request: Request) {
     }
 
     // Live mode — Finnhub (no daily cap)
+    // q.c is 0 outside trading hours; fall back to q.pc (previous close) so P/L is always meaningful
     const q = await getFinnhubQuote(symbol)
-    if (!q.c) return NextResponse.json({ error: 'No quote data' }, { status: 404 })
+    const livePrice = q.c || q.pc
+    if (!livePrice) return NextResponse.json({ error: 'No quote data' }, { status: 404 })
 
     return NextResponse.json({
       symbol,
-      price: String(q.c),
-      close: String(q.c),
+      price: String(livePrice),
+      close: String(livePrice),
       change: String(q.d),
       percent_change: String(q.dp),
       day_high: String(q.h),

@@ -8,6 +8,7 @@ interface WalletSummary {
   cash: number
   invested: number
   pnl: number
+  realisedPnl: number
   total: number
   updatedAt: string | null
 }
@@ -19,7 +20,7 @@ interface WalletContextValue {
 
 const WalletContext = createContext<WalletContextValue | null>(null)
 
-const DEFAULT: WalletSummary = { cash: 0, invested: 0, pnl: 0, total: 0, updatedAt: null }
+const DEFAULT: WalletSummary = { cash: 0, invested: 0, pnl: 0, realisedPnl: 0, total: 0, updatedAt: null }
 
 /**
  * Provides live wallet summary (cash, invested, unrealised P/L) to the dashboard.
@@ -34,13 +35,15 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   const refresh = useCallback(async () => {
     const supabase = createClient()
 
-    const [walletRes, positionsRes] = await Promise.all([
+    const [walletRes, positionsRes, realisedRes] = await Promise.all([
       supabase.from('wallet_balance').select('cash_balance, updated_at').eq('user_id', userId).single(),
       supabase.from('positions').select('symbol, quantity, avg_buy_price').eq('user_id', userId),
+      supabase.from('transactions').select('pnl').eq('user_id', userId).eq('type', 'sell').not('pnl', 'is', null),
     ])
 
     const cash = Number(walletRes.data?.cash_balance ?? 0)
     const positions = positionsRes.data ?? []
+    const realisedPnl = (realisedRes.data ?? []).reduce((sum, t) => sum + Number(t.pnl), 0)
 
     const invested = positions.reduce(
       (sum, p) => sum + Number(p.quantity) * Number(p.avg_buy_price),
@@ -77,6 +80,7 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
       cash,
       invested,
       pnl,
+      realisedPnl,
       total: cash + invested + pnl,
       updatedAt: walletRes.data?.updated_at ?? null,
     })

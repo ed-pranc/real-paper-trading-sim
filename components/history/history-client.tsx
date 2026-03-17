@@ -11,6 +11,7 @@ import { WinRateRing } from '@/components/history/win-rate-ring'
 import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import { fmtDate, fmtDateTime } from '@/lib/utils'
+import { LABELS } from '@/lib/labels'
 
 interface Transaction {
   id: string
@@ -110,7 +111,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         </Card>
         <Card>
           <CardContent className="pt-5 pb-5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Realised P/L</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">{LABELS.realisedPnl}</p>
             <p className={`text-2xl font-bold mt-1 ${realisedPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {realisedPnL >= 0 ? '+' : ''}{fmt(realisedPnL)}
             </p>

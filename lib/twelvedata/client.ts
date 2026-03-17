@@ -1,10 +1,16 @@
 const BASE_URL = 'https://api.twelvedata.com'
 const API_KEY = process.env.TWELVE_DATA_API_KEY!
 
+import { getCached, setCached } from '@/lib/server-cache'
+
 /**
  * Low-level fetch wrapper for the Twelve Data REST API.
+ * Uses an in-memory TTL cache (works in both dev and production).
+ * { next: { revalidate } } is skipped in Next.js dev mode, so we
+ * manage caching ourselves to protect the daily API credit budget.
  * @param {string} endpoint - API endpoint path, e.g. '/quote'
  * @param {Record<string, string>} params - Query parameters to append
+ * @param {number} revalidate - Cache TTL in seconds (0 = no cache)
  * @returns {Promise<unknown>} Parsed JSON response
  */
 export async function tdFetch(endpoint: string, params: Record<string, string>, revalidate = 60) {
@@ -12,7 +18,15 @@ export async function tdFetch(endpoint: string, params: Record<string, string>, 
   url.searchParams.set('apikey', API_KEY)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
-  const res = await fetch(url.toString(), { next: { revalidate } })
+  // Cache key omits the API key for safety
+  const cacheKey = `td:${endpoint}:${new URLSearchParams(params).toString()}`
+
+  if (revalidate > 0) {
+    const cached = getCached(cacheKey)
+    if (cached !== null) return cached
+  }
+
+  const res = await fetch(url.toString(), { cache: 'no-store' })
   if (!res.ok) throw new Error(`Twelve Data HTTP error: ${res.status}`)
 
   const json = await res.json()
@@ -21,6 +35,7 @@ export async function tdFetch(endpoint: string, params: Record<string, string>, 
     throw new Error(json.message ?? `Twelve Data error code ${json.code}`)
   }
 
+  if (revalidate > 0) setCached(cacheKey, json, revalidate)
   return json
 }
 
