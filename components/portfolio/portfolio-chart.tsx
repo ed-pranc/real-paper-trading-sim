@@ -35,6 +35,7 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
   const [period, setPeriod] = useState<Period>('1Y')
   const [chartData, setChartData] = useState<{ date: string; value: number }[]>([])
   const [loading, setLoading] = useState(false)
+  const [chartError, setChartError] = useState<'api-error' | null>(null)
 
   useEffect(() => {
     if (symbols.length === 0) return
@@ -42,6 +43,7 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
     async function fetchTimeSeries() {
       setLoading(true)
       setChartData([])
+      setChartError(null)
       const cfg = TIMESERIES_CONFIG[period]
       const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
 
@@ -53,7 +55,15 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
         )
       )
 
-      if (seriesResults.every(r => !r || r.error)) {
+      const allErrored = seriesResults.every(r => !r || r.error || r.status === 'error')
+      const hasData = seriesResults.some(r => Array.isArray(r?.values) && r.values.length > 0)
+
+      if (allErrored) {
+        setChartError('api-error')
+        setLoading(false)
+        return
+      }
+      if (!hasData) {
         setLoading(false)
         return
       }
@@ -102,6 +112,10 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
       {loading ? (
         <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
           Loading chart…
+        </div>
+      ) : chartError === 'api-error' ? (
+        <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+          Price data temporarily unavailable. Check API limits.
         </div>
       ) : chartData.length > 1 ? (
         <div className="h-48">

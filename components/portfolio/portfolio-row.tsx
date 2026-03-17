@@ -46,9 +46,15 @@ export function PortfolioRow({
       const dateParam = simulationDate ? `&date=${simulationDate}` : ''
       const res = await fetch(`/api/market/quote?symbol=${symbol}${dateParam}`)
       const data = await res.json()
-      const p = parseFloat(data?.close ?? data?.price ?? '0')
-      setPrice(p)
-      onPriceLoaded?.(symbol, p)
+      if (data?.error || (!data?.close && !data?.price)) {
+        // API failed — keep showing avgBuyPrice (already set as initial state)
+        return
+      }
+      const p = parseFloat(data.close ?? data.price)
+      if (p > 0) {
+        setPrice(p)
+        onPriceLoaded?.(symbol, p)
+      }
     } finally {
       setLoading(false)
     }
@@ -57,15 +63,18 @@ export function PortfolioRow({
   useEffect(() => {
     setLoading(true)
     fetchPrice()
-    const interval = setInterval(fetchPrice, 60_000)
-    return () => clearInterval(interval)
-  }, [fetchPrice])
+    // Historical prices are immutable — no need to poll in sim mode
+    if (!simulationDate) {
+      const interval = setInterval(fetchPrice, 60_000)
+      return () => clearInterval(interval)
+    }
+  }, [fetchPrice, simulationDate])
 
-  const currentValue = price !== null ? price * quantity : avgBuyPrice * quantity
-  const costBasis = avgBuyPrice * quantity
-  const pnl = currentValue - costBasis
-  const pnlPct = costBasis > 0 ? (pnl / costBasis) * 100 : 0
-  const pnlPositive = pnl >= 0
+  const costBasis   = avgBuyPrice * quantity
+  const currentValue = price !== null ? price * quantity : null
+  const pnl          = currentValue !== null ? currentValue - costBasis : null
+  const pnlPct       = pnl !== null && costBasis > 0 ? (pnl / costBasis) * 100 : null
+  const pnlPositive  = pnl !== null ? pnl >= 0 : true
 
   function openModal(mode: 'buy' | 'sell') {
     setModalMode(mode)
@@ -95,9 +104,10 @@ export function PortfolioRow({
 
         {/* Current price */}
         <div className="w-28 shrink-0">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : (
-            <p className="font-semibold text-sm">${fmt(price ?? 0)}</p>
-          )}
+          {loading
+            ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            : <p className="font-semibold text-sm">{price !== null ? `$${fmt(price)}` : '—'}</p>
+          }
         </div>
 
         {/* Units */}
@@ -118,17 +128,25 @@ export function PortfolioRow({
 
         {/* P/L */}
         <div className="w-28 shrink-0">
-          <p className={`text-sm font-semibold ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-            {pnlPositive ? '+' : ''}${fmt(pnl)}
-          </p>
-          <p className={`text-xs ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-            ({pnlPositive ? '+' : ''}{pnlPct.toFixed(2)}%)
-          </p>
+          {pnl !== null ? (
+            <>
+              <p className={`text-sm font-semibold ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
+                {pnlPositive ? '+' : ''}${fmt(pnl)}
+              </p>
+              <p className={`text-xs ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
+                ({pnlPositive ? '+' : ''}{pnlPct!.toFixed(2)}%)
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">—</p>
+          )}
         </div>
 
         {/* Current value */}
         <div className="flex-1">
-          <p className="text-sm font-medium">${fmt(currentValue)}</p>
+          <p className="text-sm font-medium">
+            {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
+          </p>
         </div>
 
         {/* Actions — hidden for future positions */}
@@ -138,7 +156,7 @@ export function PortfolioRow({
               <Button
                 size="sm"
                 className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
-                disabled={loading || !price}
+                disabled={loading}
                 onClick={() => openModal('sell')}
               >
                 Close
@@ -146,7 +164,7 @@ export function PortfolioRow({
               <Button
                 size="sm"
                 className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
-                disabled={loading || !price}
+                disabled={loading}
                 onClick={() => openModal('buy')}
               >
                 Trade

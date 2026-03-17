@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { tdFetch } from '@/lib/twelvedata/client'
+import { getStockCandles } from '@/lib/finnhub/client'
 
 const QuerySchema = z.object({
   symbol: z.string().min(1).max(20),
@@ -12,6 +12,7 @@ const QuerySchema = z.object({
 /**
  * GET /api/market/timeseries?symbol=AAPL&interval=1h&outputsize=24&end_date=2024-01-15
  * Returns OHLCV time series data for charting.
+ * Uses Finnhub /stock/candle — no daily credit limit (vs Twelve Data 800/day).
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -29,10 +30,8 @@ export async function GET(request: Request) {
   const { symbol, interval, outputsize, end_date } = result.data
 
   try {
-    const params: Record<string, string> = { symbol, interval, outputsize }
-    if (end_date) params.end_date = end_date
-    const data = await tdFetch('/time_series', params)
-    return NextResponse.json(data)
+    const values = await getStockCandles(symbol, interval, Number(outputsize), end_date)
+    return NextResponse.json({ values })
   } catch {
     return NextResponse.json({ error: 'Time series failed' }, { status: 500 })
   }

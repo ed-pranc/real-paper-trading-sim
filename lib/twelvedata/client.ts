@@ -7,12 +7,12 @@ const API_KEY = process.env.TWELVE_DATA_API_KEY!
  * @param {Record<string, string>} params - Query parameters to append
  * @returns {Promise<unknown>} Parsed JSON response
  */
-export async function tdFetch(endpoint: string, params: Record<string, string>) {
+export async function tdFetch(endpoint: string, params: Record<string, string>, revalidate = 60) {
   const url = new URL(`${BASE_URL}${endpoint}`)
   url.searchParams.set('apikey', API_KEY)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
 
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } })
+  const res = await fetch(url.toString(), { next: { revalidate } })
   if (!res.ok) throw new Error(`Twelve Data HTTP error: ${res.status}`)
 
   const json = await res.json()

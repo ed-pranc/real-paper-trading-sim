@@ -167,16 +167,18 @@ export function PortfolioClient({
   const futurePositions = effectivePositions.filter(p => p.is_future)
 
   // Summary cards: in sim mode compute from effectivePositions + priceMap
-  let displaySummary: { invested: number; pnl: number; total: number }
+  let displaySummary: { invested: number; pnl: number | null; total: number | null }
   if (simulationDate) {
     const invested = activePositions.reduce((s, p) => s + p.quantity * p.avg_buy_price, 0)
-    const total = activePositions.reduce((s, p) => {
-      const price = priceMap[p.symbol]
-      return s + (price != null ? price * p.quantity : p.quantity * p.avg_buy_price)
-    }, 0)
-    displaySummary = { invested, total, pnl: total - invested }
+    // Only show Total Value when every active position has a real current price loaded
+    const allPricesLoaded = activePositions.length > 0 &&
+      activePositions.every(p => (priceMap[p.symbol] ?? 0) > 0)
+    const total = allPricesLoaded
+      ? activePositions.reduce((s, p) => s + priceMap[p.symbol]! * p.quantity, 0)
+      : null
+    displaySummary = { invested, total, pnl: total !== null ? total - invested : null }
   } else {
-    displaySummary = summary
+    displaySummary = { ...summary, pnl: summary.pnl, total: summary.total }
   }
 
   // Filter snapshots to ≤ simulationDate in sim mode
@@ -215,15 +217,19 @@ export function PortfolioClient({
             <Card>
               <CardContent className="pt-5 pb-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Unrealised P/L</p>
-                <p className={`text-2xl font-bold mt-1 ${displaySummary.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {displaySummary.pnl >= 0 ? '+' : ''}{fmt(displaySummary.pnl)}
+                <p className={`text-2xl font-bold mt-1 ${(displaySummary.pnl ?? 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {displaySummary.pnl !== null
+                    ? `${displaySummary.pnl >= 0 ? '+' : ''}${fmt(displaySummary.pnl)}`
+                    : '—'}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-5 pb-5">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Value</p>
-                <p className="text-2xl font-bold mt-1">{fmt(displaySummary.total)}</p>
+                <p className="text-2xl font-bold mt-1">
+                  {displaySummary.total !== null ? fmt(displaySummary.total) : '—'}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -265,9 +271,9 @@ export function PortfolioClient({
             <Card>
               <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
                 <div className="w-48 shrink-0 text-xs font-medium text-muted-foreground">Asset</div>
-                <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">Price</div>
+                <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">Current Price</div>
                 <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Units</div>
-                <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Avg. Open</div>
+                <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Buy Price</div>
                 <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">Trade Date</div>
                 <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">P/L</div>
                 <div className="flex-1 text-xs font-medium text-muted-foreground">Value</div>
