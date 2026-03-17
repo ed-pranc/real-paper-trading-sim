@@ -55,11 +55,12 @@ export async function getTimeSeries(
   symbol: string,
   interval: string,
   outputsize: string,
-  endDate?: string
+  endDate?: string,
+  revalidate = 60
 ) {
   const params: Record<string, string> = { symbol, interval, outputsize }
   if (endDate) params.end_date = endDate
-  return tdFetch('/time_series', params)
+  return tdFetch('/time_series', params, revalidate)
 }
 
 /**

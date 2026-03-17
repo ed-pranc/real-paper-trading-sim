@@ -26,6 +26,7 @@ interface QuoteData {
   average_volume?: string
   day_low?: string
   day_high?: string
+  is_historical?: boolean
 }
 
 interface StockDetailSheetProps {
@@ -101,9 +102,11 @@ export function StockDetailSheet({ symbol, companyName, simulationDate, children
             {price > 0 && (
               <div className="text-right shrink-0">
                 <p className="text-lg font-bold">${price.toFixed(2)}</p>
-                <p className={`text-xs ${changeColor}`}>
-                  {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{pct.toFixed(2)}%)
-                </p>
+                {quote && !quote.is_historical && (
+                  <p className={`text-xs ${changeColor}`}>
+                    {isPositive ? '+' : ''}{change.toFixed(2)} ({isPositive ? '+' : ''}{pct.toFixed(2)}%)
+                  </p>
+                )}
               </div>
             )}
           </div>

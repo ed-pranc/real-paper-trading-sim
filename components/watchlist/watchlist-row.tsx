@@ -46,7 +46,7 @@ export function WatchlistRow({
   const fetchSparkline = useCallback(async () => {
     const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
     try {
-      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1week&outputsize=52${endParam}`)
+      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=260${endParam}`)
       const data = await res.json()
       if (data?.values) {
         const sorted = [...data.values].reverse()
@@ -62,11 +62,8 @@ export function WatchlistRow({
 
   useEffect(() => {
     fetchSparkline()
-    // Historical sparklines don't change — only poll in live mode
-    if (simulationDate) return
-    const interval = setInterval(fetchSparkline, 60_000)
-    return () => clearInterval(interval)
-  }, [fetchSparkline, simulationDate])
+    // 1Y daily sparkline: bars close once per day — no polling needed
+  }, [fetchSparkline])
 
   const price = priceData?.price ?? 0
   const change = priceData?.change ?? 0
