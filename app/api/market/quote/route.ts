@@ -30,12 +30,13 @@ export async function GET(request: Request) {
   try {
     if (date) {
       // Historical / simulation mode — Twelve Data time_series
+      // Historical data is immutable; cache for 24 hours to conserve API credits
       const ts = await tdFetch('/time_series', {
         symbol,
         interval: '1day',
         end_date: date,
         outputsize: '1',
-      })
+      }, 86400)
       const bar = ts?.values?.[0]
       if (!bar) return NextResponse.json({ error: 'No data for date' }, { status: 404 })
       return NextResponse.json({

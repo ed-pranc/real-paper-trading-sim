@@ -60,3 +60,53 @@ export async function getCompanyNews(
   const data = await finnhubFetch('/company-news', { symbol, from, to }, 300)
   return Array.isArray(data) ? data : []
 }
+
+// Finnhub resolution codes for each interval
+const INTERVAL_TO_RESOLUTION: Record<string, string> = {
+  '15min': '15', '30min': '30', '1h': '60',
+  '1day': 'D', '1week': 'W', '1month': 'M',
+}
+
+// Approximate interval duration in seconds (used to compute `from` timestamp)
+const INTERVAL_SECONDS: Record<string, number> = {
+  '15min': 900, '30min': 1800, '1h': 3600,
+  '1day': 86400, '1week': 604800, '1month': 2592000,
+}
+
+/**
+ * Fetch OHLCV candles from Finnhub — no daily credit limit.
+ * Returns data in the same shape the portfolio chart expects: { datetime, close }[].
+ * @param symbol   Ticker symbol, e.g. 'AAPL'
+ * @param interval Twelve Data-style interval ('1day', '1week', '1month', '1h', '15min')
+ * @param outputsize Number of bars to return
+ * @param endDate  ISO date string (YYYY-MM-DD) for the end of the series; defaults to today
+ */
+export async function getStockCandles(
+  symbol: string,
+  interval: string,
+  outputsize: number,
+  endDate?: string,
+): Promise<{ datetime: string; close: string }[]> {
+  const resolution = INTERVAL_TO_RESOLUTION[interval] ?? 'D'
+  const toTs = endDate
+    ? Math.floor(new Date(endDate + 'T23:59:59Z').getTime() / 1000)
+    : Math.floor(Date.now() / 1000)
+  const intervalSecs = INTERVAL_SECONDS[interval] ?? 86400
+  const fromTs = toTs - intervalSecs * outputsize
+
+  // Historical candles are immutable; live candles refresh every 60s
+  const revalidate = endDate ? 86400 : 60
+  const data = await finnhubFetch('/stock/candle', {
+    symbol,
+    resolution,
+    from: String(fromTs),
+    to: String(toTs),
+  }, revalidate)
+
+  if (data?.s !== 'ok' || !Array.isArray(data.c)) return []
+
+  return (data.t as number[]).map((ts: number, i: number) => ({
+    datetime: new Date(ts * 1000).toISOString().slice(0, 10),
+    close: String((data.c as number[])[i]),
+  }))
+}
