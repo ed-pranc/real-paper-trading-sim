@@ -1,6 +1,6 @@
 'use client'
 
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts'
+import { AreaChart, Area, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
 
 interface SparklineProps {
   data: { value: number }[]
@@ -12,6 +12,11 @@ export function Sparkline({ data, positive }: SparklineProps) {
 
   const color = positive ? '#22c55e' : '#ef4444'
   const gradientId = `spark-${positive ? 'pos' : 'neg'}`
+  const values = data.map(d => d.value)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const pad = (max - min) * 0.05 || min * 0.01
+  const domain: [number, number] = [min - pad, max + pad]
 
   return (
     <div className="w-32 h-10">
@@ -23,9 +28,8 @@ export function Sparkline({ data, positive }: SparklineProps) {
               <stop offset="95%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <Tooltip
-            content={() => null}
-          />
+          <YAxis hide domain={domain} />
+          <Tooltip content={() => null} />
           <Area
             type="monotone"
             dataKey="value"

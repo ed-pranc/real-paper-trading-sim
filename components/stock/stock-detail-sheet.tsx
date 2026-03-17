@@ -36,8 +36,11 @@ interface StockDetailSheetProps {
 }
 
 export function StockDetailSheet({ symbol, companyName, simulationDate, children }: StockDetailSheetProps) {
+  const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [quote, setQuote] = useState<QuoteData | null>(null)
+
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
     if (!open) return
@@ -72,6 +75,8 @@ export function StockDetailSheet({ symbol, companyName, simulationDate, children
   const vol = quote?.volume ? Number(quote.volume).toLocaleString() : null
   const dayLow = quote?.day_low ? parseFloat(quote.day_low).toFixed(2) : null
   const dayHigh = quote?.day_high ? parseFloat(quote.day_high).toFixed(2) : null
+
+  if (!mounted) return <>{children}</>
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

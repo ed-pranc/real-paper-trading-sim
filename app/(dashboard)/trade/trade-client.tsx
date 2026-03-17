@@ -127,7 +127,7 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
             <div className="absolute z-50 top-full mt-1 w-full bg-popover border border-border rounded-md shadow-lg overflow-hidden">
               {results.map(r => (
                 <button
-                  key={r.symbol}
+                  key={`${r.symbol}-${r.exchange}`}
                   className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent transition-colors"
                   onMouseDown={() => selectSymbol(r.symbol, r.instrument_name)}
                 >

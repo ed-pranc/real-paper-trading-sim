@@ -46,7 +46,7 @@ export function WatchlistRow({
   const fetchSparkline = useCallback(async () => {
     const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
     try {
-      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=30${endParam}`)
+      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1week&outputsize=52${endParam}`)
       const data = await res.json()
       if (data?.values) {
         const sorted = [...data.values].reverse()
