@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { withdrawFunds } from '@/lib/actions/wallet'
 import { useWallet } from '@/context/wallet'
+import { useSimulationDate } from '@/context/simulation-date'
 import confetti from 'canvas-confetti'
 
 interface WithdrawModalProps {
@@ -47,6 +48,7 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
   const [error, setError] = useState('')
   const [happiness, setHappiness] = useState(false)
   const { refresh } = useWallet()
+  const { simulationDate } = useSimulationDate()
 
   function handleClose() {
     setAmount('')
@@ -67,7 +69,7 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
     }
     setError('')
     startTransition(async () => {
-      await withdrawFunds(value)
+      await withdrawFunds(value, simulationDate)
       await refresh()
       setHappiness(true)
       fireFireworks()

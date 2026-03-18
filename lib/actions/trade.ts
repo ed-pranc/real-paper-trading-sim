@@ -8,7 +8,13 @@ import { SupabaseClient } from '@supabase/supabase-js'
 /**
  * Saves a portfolio snapshot after a trade.
  * total_value = cash + sum(position.quantity × avg_buy_price).
- * This is accurate at trade time because the just-traded shares were priced at market.
+ *
+ * NOTE: total_value is stored as cash + cost_basis (qty × avgBuyPrice),
+ * NOT cash + market_value. This means the "Portfolio Value Over Time" chart
+ * reflects capital deployed, not actual portfolio performance — it will appear
+ * flat between trades even as market prices change. A future "lazy snapshot
+ * refresh" mechanism should overwrite these rows with real market prices once
+ * they are available on the client side.
  */
 async function savePortfolioSnapshot(
   supabase: SupabaseClient,

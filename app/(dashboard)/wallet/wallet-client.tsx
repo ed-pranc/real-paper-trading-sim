@@ -29,6 +29,7 @@ interface DepositRow {
   type: string
   amount: number
   created_at: string
+  simulation_date?: string | null
 }
 
 function fmt(n: number) {
@@ -221,6 +222,11 @@ export function WalletClient({
                     <TableRow key={row.id}>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {fmtDateTime(row.created_at)}
+                        {row.simulation_date && (
+                          <span className="ml-2 text-[11px] font-medium text-amber-500">
+                            SIM {row.simulation_date}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center gap-1.5 font-medium ${row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>

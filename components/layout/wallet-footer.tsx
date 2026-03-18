@@ -10,7 +10,7 @@ function fmt(n: number) {
 
 export function WalletFooter() {
   const { summary } = useWallet()
-  const { simulationDate } = useSimulationDate()
+  const { simulationDate, setSimulationDate } = useSimulationDate()
   const { cash, invested, pnl, realisedPnl, total } = summary
 
   const isSim = simulationDate !== null
@@ -48,6 +48,14 @@ export function WalletFooter() {
         <div className="flex flex-col items-center justify-center py-3 px-4">
           <span className="text-xl font-bold tabular-nums tracking-tight text-primary">{fmt(total)}</span>
           <span className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{LABELS.totalValue}</span>
+          {isSim && (
+            <button
+              onClick={() => setSimulationDate(null)}
+              className="text-[10px] text-primary underline underline-offset-2 hover:opacity-70 transition-opacity mt-0.5"
+            >
+              Go Live
+            </button>
+          )}
         </div>
 
       </div>

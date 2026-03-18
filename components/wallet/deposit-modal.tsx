@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { depositFunds } from '@/lib/actions/wallet'
 import { useWallet } from '@/context/wallet'
+import { useSimulationDate } from '@/context/simulation-date'
 
 interface DepositModalProps {
   open: boolean
@@ -18,6 +19,7 @@ export function DepositModal({ open, onClose }: DepositModalProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const { refresh } = useWallet()
+  const { simulationDate } = useSimulationDate()
 
   function handleDeposit() {
     const value = parseFloat(amount)
@@ -27,7 +29,7 @@ export function DepositModal({ open, onClose }: DepositModalProps) {
     }
     setError('')
     startTransition(async () => {
-      await depositFunds(value)
+      await depositFunds(value, simulationDate)
       await refresh()
       setAmount('')
       onClose()

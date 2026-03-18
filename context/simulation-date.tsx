@@ -1,6 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+
+const STORAGE_KEY = 'rpt_simulation_date'
 
 interface SimulationDateContextValue {
   simulationDate: string | null   // ISO date string, null = live mode
@@ -13,10 +15,27 @@ const SimulationDateContext = createContext<SimulationDateContextValue | null>(n
 /**
  * Provides global simulation date state to the app.
  * When simulationDate is null, the app uses live prices.
+ * State is persisted to localStorage so the sim session survives page reloads.
+ * Starts as null on the server (SSR-safe) and hydrates from storage on mount.
  * @param {{ children: React.ReactNode }} props
  */
 export function SimulationDateProvider({ children }: { children: React.ReactNode }) {
-  const [simulationDate, setSimulationDate] = useState<string | null>(null)
+  // Always start null to match SSR render — hydrated from localStorage after mount
+  const [simulationDate, setSimulationDateState] = useState<string | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) setSimulationDateState(stored)
+  }, [])
+
+  const setSimulationDate = useCallback((date: string | null) => {
+    setSimulationDateState(date)
+    if (date === null) {
+      localStorage.removeItem(STORAGE_KEY)
+    } else {
+      localStorage.setItem(STORAGE_KEY, date)
+    }
+  }, [])
 
   return (
     <SimulationDateContext.Provider

@@ -8,8 +8,10 @@ const AmountSchema = z.number().positive().max(1_000_000)
 
 /**
  * Deposit virtual funds into the user's wallet and log to wallet_deposits.
+ * @param {number} amount - Amount to deposit
+ * @param {string | null} [simulationDate] - ISO date string if called in sim mode, else omit
  */
-export async function depositFunds(amount: number) {
+export async function depositFunds(amount: number, simulationDate?: string | null) {
   const parsed = AmountSchema.parse(amount)
 
   const supabase = await createClient()
@@ -35,6 +37,7 @@ export async function depositFunds(amount: number) {
     user_id: user.id,
     type: 'deposit',
     amount: parsed,
+    ...(simulationDate ? { simulation_date: simulationDate } : {}),
   })
 
   revalidatePath('/', 'layout')
@@ -43,8 +46,10 @@ export async function depositFunds(amount: number) {
 /**
  * Withdraw virtual funds from the user's wallet and log to wallet_deposits.
  * Throws if the user has insufficient cash balance.
+ * @param {number} amount - Amount to withdraw
+ * @param {string | null} [simulationDate] - ISO date string if called in sim mode, else omit
  */
-export async function withdrawFunds(amount: number) {
+export async function withdrawFunds(amount: number, simulationDate?: string | null) {
   const parsed = AmountSchema.parse(amount)
 
   const supabase = await createClient()
@@ -71,6 +76,7 @@ export async function withdrawFunds(amount: number) {
     user_id: user.id,
     type: 'withdraw',
     amount: parsed,
+    ...(simulationDate ? { simulation_date: simulationDate } : {}),
   })
 
   revalidatePath('/', 'layout')
@@ -83,7 +89,7 @@ export async function getDepositHistory(userId: string) {
   const supabase = await createClient()
   const { data } = await supabase
     .from('wallet_deposits')
-    .select('id, type, amount, created_at')
+    .select('id, type, amount, created_at, simulation_date')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
   return data ?? []

@@ -66,6 +66,30 @@ const MODULES = [
     badge: 'Feature',
     description:
       'Trade the past. Pick any historical date and the platform locks all prices to that moment. Buy and sell as if you were there — then advance the date to see how your decisions played out.',
+    isAnchor: true,
+  },
+]
+
+const SIM_STEPS = [
+  {
+    step: '01',
+    title: 'Set a historical date',
+    description: 'Use the date picker in the top bar to travel back in time — e.g. 2021-01-01. All prices lock to that date.',
+  },
+  {
+    step: '02',
+    title: 'Deposit & buy shares',
+    description: 'Deposit virtual funds and buy stocks at their historical price. Your deposit is stamped with your chosen sim date.',
+  },
+  {
+    step: '03',
+    title: 'Advance the date',
+    description: 'Move the sim date forward step by step, or click "Go Live" in the footer to jump straight to today\'s prices.',
+  },
+  {
+    step: '04',
+    title: 'Check your profit',
+    description: 'The portfolio and footer show your unrealised P/L vs. your historical cost basis — exactly what you would have made.',
   },
 ]
 
@@ -135,12 +159,12 @@ export function HomeClient({
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Platform modules</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MODULES.map(({ href, icon: Icon, title, badge, description }) => (
+          {MODULES.map(({ href, icon: Icon, title, badge, description, isAnchor }) => (
             <Card key={title} className="flex flex-col hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary">
+                    <div className={`flex items-center justify-center h-8 w-8 rounded-lg ${isAnchor ? 'bg-amber-500/10 text-amber-500' : 'bg-primary/10 text-primary'}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <CardTitle className="text-base">{title}</CardTitle>
@@ -152,7 +176,13 @@ export function HomeClient({
                 <CardDescription className="text-sm leading-relaxed flex-1">
                   {description}
                 </CardDescription>
-                {href !== '#simulation' && (
+                {isAnchor ? (
+                  <Button variant="ghost" size="sm" className="self-start -ml-2 text-amber-500" asChild>
+                    <a href={href}>
+                      Learn how it works <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                    </a>
+                  </Button>
+                ) : (
                   <Button variant="ghost" size="sm" className="self-start -ml-2 text-primary" asChild>
                     <Link href={href}>
                       Go to {title} <ArrowRight className="h-3.5 w-3.5 ml-1" />
@@ -183,6 +213,31 @@ export function HomeClient({
                 <p className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
               </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* How simulation works */}
+      <div id="simulation" className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-amber-500/10 text-amber-500">
+            <CalendarClock className="h-4 w-4" />
+          </div>
+          <h2 className="text-lg font-semibold">How Simulation Mode works</h2>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Simulation mode lets you travel back to any point in history and trade with real market prices from that date.
+          Advance time to see exactly what profit (or loss) you would have made.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {SIM_STEPS.map(({ step, title, description }) => (
+            <div key={step} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-1.5">
+              <span className="text-xs font-mono text-amber-500 font-bold">{step}</span>
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
@@ -227,8 +282,8 @@ export function HomeClient({
         </div>
 
         {!simulationUsed && (
-          <p id="simulation-hint" className="text-xs text-muted-foreground">
-            💡 <strong>Simulation mode:</strong> Toggle the LIVE / SIMULATION switch in the top bar and pick a historical date to trade the past.
+          <p className="text-xs text-muted-foreground">
+            💡 New to simulation? See the <a href="#simulation" className="underline underline-offset-2 text-amber-500 hover:opacity-70">How Simulation Mode works</a> section above.
           </p>
         )}
       </div>

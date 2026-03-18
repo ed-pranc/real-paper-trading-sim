@@ -35,14 +35,74 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   const refresh = useCallback(async () => {
     const supabase = createClient()
 
+    // In sim mode we replay transactions instead of reading the live positions table,
+    // so we get the correct state for the chosen historical date.
     const [walletRes, positionsRes, realisedRes] = await Promise.all([
       supabase.from('wallet_balance').select('cash_balance, updated_at').eq('user_id', userId).single(),
-      supabase.from('positions').select('symbol, quantity, avg_buy_price').eq('user_id', userId),
-      supabase.from('transactions').select('pnl').eq('user_id', userId).eq('type', 'sell').not('pnl', 'is', null),
+      simulationDate
+        ? supabase
+            .from('transactions')
+            .select('symbol, type, quantity, price, simulation_date, trade_date')
+            .eq('user_id', userId)
+        : supabase.from('positions').select('symbol, quantity, avg_buy_price').eq('user_id', userId),
+      simulationDate
+        ? supabase
+            .from('transactions')
+            .select('pnl')
+            .eq('user_id', userId)
+            .eq('type', 'sell')
+            .not('pnl', 'is', null)
+            .lte('simulation_date', simulationDate)
+        : supabase
+            .from('transactions')
+            .select('pnl')
+            .eq('user_id', userId)
+            .eq('type', 'sell')
+            .not('pnl', 'is', null),
     ])
 
     const cash = Number(walletRes.data?.cash_balance ?? 0)
-    const positions = positionsRes.data ?? []
+
+    // Derive effective positions from transaction replay in sim mode
+    let positions: { symbol: string; quantity: number; avg_buy_price: number }[]
+    if (simulationDate) {
+      type TxRow = { symbol: string; type: string; quantity: number; price: number; simulation_date: string | null; trade_date: string }
+      const txs = (positionsRes.data ?? []) as TxRow[]
+      const sorted = [...txs].sort((a, b) => {
+        const da = a.simulation_date ?? a.trade_date.slice(0, 10)
+        const db = b.simulation_date ?? b.trade_date.slice(0, 10)
+        return da.localeCompare(db)
+      })
+      const bySymbol: Record<string, { qty: number; totalCost: number }> = {}
+      for (const tx of sorted) {
+        const effDate = tx.simulation_date ?? tx.trade_date.slice(0, 10)
+        if (effDate > simulationDate) continue
+        if (!bySymbol[tx.symbol]) bySymbol[tx.symbol] = { qty: 0, totalCost: 0 }
+        const s = bySymbol[tx.symbol]
+        const qty = Number(tx.quantity)
+        const price = Number(tx.price)
+        if (tx.type === 'buy') {
+          s.qty += qty
+          s.totalCost += qty * price
+        } else {
+          const avgPrice = s.qty > 0 ? s.totalCost / s.qty : 0
+          s.qty -= qty
+          s.totalCost -= qty * avgPrice
+          if (s.qty < 0) s.qty = 0
+          if (s.totalCost < 0) s.totalCost = 0
+        }
+      }
+      positions = Object.entries(bySymbol)
+        .filter(([, s]) => s.qty > 0.000001)
+        .map(([symbol, s]) => ({
+          symbol,
+          quantity: s.qty,
+          avg_buy_price: s.qty > 0 ? s.totalCost / s.qty : 0,
+        }))
+    } else {
+      positions = (positionsRes.data ?? []) as { symbol: string; quantity: number; avg_buy_price: number }[]
+    }
+
     const realisedPnl = (realisedRes.data ?? []).reduce((sum, t) => sum + Number(t.pnl), 0)
 
     const invested = positions.reduce(

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Wallet, Eye, BarChart2, History, User } from 'lucide-react'
+import { Home, Wallet, Eye, BarChart2, History, User, LogOut } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { signOut } from '@/lib/actions/auth'
 
 const navItems = [
   { href: '/home',      label: 'Home',      icon: Home },
@@ -93,6 +94,16 @@ export function AppSidebar({ nickname = 'Trader', avatarUrl }: AppSidebarProps) 
                 </div>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <form action={signOut} className="w-full">
+              <SidebarMenuButton asChild tooltip="Sign out">
+                <button type="submit" className="w-full">
+                  <LogOut />
+                  <span>Sign out</span>
+                </button>
+              </SidebarMenuButton>
+            </form>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
