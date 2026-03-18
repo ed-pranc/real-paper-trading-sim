@@ -1,6 +1,12 @@
 'use client'
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 interface CashDonutProps {
   cash: number
@@ -21,10 +27,15 @@ export function CashDonut({ cash, invested }: CashDonutProps) {
     { name: 'Cash', value: cash },
   ]
 
+  const chartConfig = {
+    Invested: { label: 'Invested', color: '#22c55e' },
+    Cash: { label: 'Cash', color: 'hsl(var(--muted-foreground) / 0.2)' },
+  } satisfies ChartConfig
+
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative w-36 h-36">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="h-36 aspect-square">
           <PieChart>
             <Pie
               data={data}
@@ -41,12 +52,16 @@ export function CashDonut({ cash, invested }: CashDonutProps) {
               <Cell fill="#22c55e" />
               <Cell fill="hsl(var(--muted-foreground) / 0.2)" />
             </Pie>
-            <Tooltip
-              formatter={(v, name) => [fmt(Number(v)), name]}
-              contentStyle={{ fontSize: 11, borderRadius: 8 }}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(v, name) => [fmt(Number(v)), String(name)]}
+                  hideLabel
+                />
+              }
             />
           </PieChart>
-        </ResponsiveContainer>
+        </ChartContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-lg font-bold">{investedPct}%</span>
           <span className="text-[10px] text-muted-foreground">Invested</span>

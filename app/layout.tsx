@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import { SimulationDateProvider } from '@/context/simulation-date'
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
 const inter = Inter({
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <SimulationDateProvider>
-            {children}
-            <Toaster position="bottom-right" richColors closeButton duration={10000} />
-          </SimulationDateProvider>
+          <TooltipProvider>
+            <SimulationDateProvider>
+              {children}
+              <Toaster position="bottom-right" richColors closeButton duration={10000} />
+            </SimulationDateProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

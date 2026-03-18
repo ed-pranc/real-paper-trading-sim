@@ -1,9 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cell } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Loader2 } from 'lucide-react'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 const PERIODS = ['1D', '1W', '1M', '6M', '1Y'] as const
 type Period = typeof PERIODS[number]
@@ -80,6 +87,9 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
   const color = positive ? '#22c55e' : '#ef4444'
   const hasVolume = data.some(d => d.volume > 0)
 
+  const priceConfig = { price: { label: 'Price' } } satisfies ChartConfig
+  const volumeConfig = { volume: { label: 'Volume' } } satisfies ChartConfig
+
   return (
     <div className="space-y-3">
       {/* Period selector + last updated */}
@@ -106,58 +116,58 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
       </div>
 
       {loading && data.length === 0 ? (
-        <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading chart…
-        </div>
+        <Skeleton className="h-52 w-full" />
       ) : data.length > 1 ? (
         <div className="space-y-1">
           {/* Price chart */}
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data}>
-                <defs>
-                  <linearGradient id="stockGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis hide domain={['auto', 'auto']} />
-                <Tooltip
-                  formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Price']}
-                  labelStyle={{ fontSize: 11 }}
-                  contentStyle={{ fontSize: 11, borderRadius: 8 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="price"
-                  stroke={color}
-                  strokeWidth={2}
-                  fill="url(#stockGrad)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartContainer config={priceConfig} className="h-52">
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="stockGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+              />
+              <YAxis hide domain={['auto', 'auto']} />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Price']}
+                  />
+                }
+              />
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke={color}
+                strokeWidth={2}
+                fill="url(#stockGrad)"
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ChartContainer>
 
           {/* Volume bars */}
           {hasVolume && (
-            <div className="h-16">
-              <ResponsiveContainer width="100%" height="100%">
+            <>
+              <ChartContainer config={volumeConfig} className="h-16">
                 <BarChart data={data} barCategoryGap="10%">
                   <XAxis dataKey="date" hide />
                   <YAxis hide domain={[0, 'auto']} />
-                  <Tooltip
-                    formatter={(v) => [Number(v).toLocaleString(), 'Volume']}
-                    labelStyle={{ fontSize: 11 }}
-                    contentStyle={{ fontSize: 11, borderRadius: 8 }}
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(v) => [Number(v).toLocaleString(), 'Volume']}
+                      />
+                    }
                   />
                   <Bar dataKey="volume" isAnimationActive={false} radius={[2, 2, 0, 0]}>
                     {data.map((_, i) => (
@@ -165,11 +175,9 @@ export function StockChart({ symbol, simulationDate }: StockChartProps) {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-          {hasVolume && (
-            <p className="text-[10px] text-muted-foreground text-right pr-1">Volume</p>
+              </ChartContainer>
+              <p className="text-[10px] text-muted-foreground text-right pr-1">Volume</p>
+            </>
           )}
         </div>
       ) : (
