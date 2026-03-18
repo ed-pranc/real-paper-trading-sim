@@ -86,6 +86,8 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   function handleReset() {
     startReset(async () => {
       await resetData()
+      // Clear simulation date so WalletContext re-hydrates in live mode after reload
+      localStorage.removeItem('rpt_simulation_date')
       window.location.href = '/home'
     })
   }

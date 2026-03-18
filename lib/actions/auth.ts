@@ -16,8 +16,9 @@ export async function signOut() {
 
 /**
  * Resets all trading data for the current user to zero.
- * Clears deposits, transactions, snapshots, positions, and wallet balance.
+ * Clears deposits, transactions, snapshots, positions, price_alerts, and wallet balance.
  * Keeps user_profile and watchlist untouched.
+ * Uses the admin client to bypass RLS so all deletes are guaranteed to execute.
  * Returns (does not redirect) — caller does a hard window.location reload
  * to flush the client-side WalletContext state.
  */
@@ -26,14 +27,18 @@ export async function resetData() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const tables = ['wallet_deposits', 'transactions', 'portfolio_snapshots', 'positions']
+  const admin = createAdminClient()
+
+  const tables = ['price_alerts', 'portfolio_snapshots', 'transactions', 'wallet_deposits', 'positions']
   for (const table of tables) {
-    await supabase.from(table).delete().eq('user_id', user.id)
+    const { error } = await admin.from(table).delete().eq('user_id', user.id)
+    if (error) throw new Error(`Failed to reset ${table}: ${error.message}`)
   }
 
-  await supabase
+  const { error: balanceError } = await admin
     .from('wallet_balance')
     .upsert({ user_id: user.id, cash_balance: 0, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (balanceError) throw new Error(`Failed to reset wallet_balance: ${balanceError.message}`)
 
   revalidatePath('/', 'layout')
 }
@@ -48,21 +53,22 @@ export async function deleteAccount() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  // Delete all user data — order matters for FK constraints
+  // Delete all user data via admin client to bypass RLS — order matters for FK constraints
+  const admin = createAdminClient()
   const tables = [
-    'wallet_deposits',
-    'transactions',
+    'price_alerts',
     'portfolio_snapshots',
+    'transactions',
+    'wallet_deposits',
     'positions',
     'wallet_balance',
     'user_profile',
   ]
   for (const table of tables) {
-    await supabase.from(table).delete().eq('user_id', user.id)
+    await admin.from(table).delete().eq('user_id', user.id)
   }
 
   // Delete the auth user — requires service role key
-  const admin = createAdminClient()
   await admin.auth.admin.deleteUser(user.id)
 
   redirect('/login')
