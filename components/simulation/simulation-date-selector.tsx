@@ -18,7 +18,7 @@ export function SimulationDateSelector() {
 
   const handleToggle = (checked: boolean) => {
     if (checked) {
-      if (!simulationDate) setSimulationDate(today.toISOString().split('T')[0])
+      if (!simulationDate) setSimulationDate(format(today, 'yyyy-MM-dd'))
       setPopoverOpen(true)
     } else {
       setSimulationDate(null)
@@ -30,7 +30,7 @@ export function SimulationDateSelector() {
 
   const handleSelect = (date: Date | undefined) => {
     if (!date) return
-    setSimulationDate(date.toISOString().split('T')[0])
+    setSimulationDate(format(date, 'yyyy-MM-dd'))
     setPopoverOpen(false)
   }
 
