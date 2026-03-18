@@ -54,7 +54,7 @@ export function WalletFooter() {
               onClick={() => setSimulationDate(null)}
               className="bg-green-600 text-white hover:bg-green-700 cursor-pointer mt-1"
             >
-              LIVE
+              GO LIVE
             </Badge>
           )}
         </div>
