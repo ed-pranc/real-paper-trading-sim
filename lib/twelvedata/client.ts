@@ -86,3 +86,17 @@ export async function getTimeSeries(
 export async function searchSymbol(query: string) {
   return tdFetch('/symbol_search', { symbol: query, outputsize: '10' })
 }
+
+/**
+ * Returns the earliest available trading date (YYYY-MM-DD) for a symbol.
+ * Works for both stocks and ETFs. Cached 7 days — this value never changes.
+ * Costs 1 API credit per uncached symbol.
+ */
+export async function getTwelveDataEarliestDate(symbol: string): Promise<string | null> {
+  try {
+    const data = await tdFetch('/earliest_timestamp', { symbol, interval: '1day' }, 604800)
+    return (data?.datetime as string) ?? null
+  } catch {
+    return null
+  }
+}

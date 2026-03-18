@@ -12,12 +12,13 @@ import {
 import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, FastForward } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
 import { fmtDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
+import { useSimulationDate } from '@/context/simulation-date'
 
 interface WatchlistRowProps {
   symbol: string
@@ -41,6 +42,7 @@ export function WatchlistRow({
   listedDate,
 }: WatchlistRowProps) {
   const router = useRouter()
+  const { setSimulationDate } = useSimulationDate()
   const [sparkData, setSparkData] = useState<{ value: number; datetime: string }[]>([])
   const [buyOpen, setBuyOpen] = useState(false)
 
@@ -79,12 +81,13 @@ export function WatchlistRow({
   // Stock is unavailable if its listing date is after the simulation date.
   // listedDate and simulationDate are both YYYY-MM-DD so string comparison is correct.
   const unavailable = !!simulationDate && !!listedDate && listedDate > simulationDate
+  const dim = unavailable ? 'opacity-40' : ''
 
   return (
     <>
-      <TableRow className={unavailable ? 'opacity-40' : ''}>
+      <TableRow>
         {/* Symbol + company */}
-        <TableCell>
+        <TableCell className={dim}>
           <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <SymbolAvatar symbol={symbol} size={36} />
@@ -97,8 +100,8 @@ export function WatchlistRow({
         </TableCell>
 
         {/* 1D Change */}
-        <TableCell>
-          {priceLoading ? (
+        <TableCell className={dim}>
+          {!unavailable && (priceLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : priceData?.is_historical ? (
             <div className="text-muted-foreground">
@@ -114,17 +117,17 @@ export function WatchlistRow({
                 {positive ? '+' : ''}{changePct.toFixed(2)}%
               </p>
             </div>
-          )}
+          ))}
         </TableCell>
 
         {/* 1Y Sparkline */}
-        <TableCell className="w-56">
-          {sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
+        <TableCell className={`w-56 ${dim}`}>
+          {!unavailable && sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
         </TableCell>
 
         {/* Buy price pill */}
-        <TableCell>
-          {!priceLoading && price > 0 && (
+        <TableCell className={dim}>
+          {!unavailable && !priceLoading && price > 0 && (
             <div className="bg-green-600/10 border border-green-600/20 rounded-xl px-3 py-1 text-center w-fit">
               <span className="text-sm font-semibold tabular-nums text-green-500">{fmt(price)}</span>
             </div>
@@ -132,8 +135,8 @@ export function WatchlistRow({
         </TableCell>
 
         {/* 52W Range */}
-        <TableCell className="min-w-[160px]">
-          {!priceLoading && week52High > 0 && (
+        <TableCell className={`min-w-[160px] ${dim}`}>
+          {!unavailable && !priceLoading && week52High > 0 && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span className="tabular-nums">{fmt(week52Low)}</span>
@@ -149,16 +152,35 @@ export function WatchlistRow({
           )}
         </TableCell>
 
-        {/* Listed date */}
+        {/* Trading Since — full opacity; shows jump button when unavailable */}
         <TableCell>
           {listedDate ? (
-            unavailable
-              ? <Badge className="bg-red-600 text-white hover:bg-red-600 text-xs tabular-nums font-medium">{fmtDate(listedDate)}</Badge>
-              : <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(listedDate)}</span>
+            unavailable ? (
+              <div className="flex items-center gap-1.5">
+                <Badge className="bg-red-600 text-white hover:bg-red-600 text-xs tabular-nums font-medium">
+                  {fmtDate(listedDate)}
+                </Badge>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => setSimulationDate(listedDate)}
+                    >
+                      <FastForward className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Jump to {fmtDate(listedDate)} — first day {symbol} traded</TooltipContent>
+                </Tooltip>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(listedDate)}</span>
+            )
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </TableCell>
 
-        {/* Actions */}
+        {/* Actions — full opacity; delete always active */}
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-2">
             <Tooltip>
