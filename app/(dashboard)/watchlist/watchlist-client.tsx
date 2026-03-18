@@ -23,6 +23,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
   const [prices, setPrices] = useState<Record<string, BatchPriceData>>({})
   const [priceLoading, setPriceLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [listedDates, setListedDates] = useState<Record<string, string | null>>({})
 
   const symbols = items.map(i => i.symbol).join(',')
 
@@ -53,6 +54,14 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
     const interval = setInterval(fetchPrices, 60_000)
     return () => clearInterval(interval)
   }, [fetchPrices, simulationDate])
+
+  useEffect(() => {
+    if (!symbols) return
+    fetch(`/api/market/profile?symbols=${encodeURIComponent(symbols)}`)
+      .then(r => r.json())
+      .then(data => { if (!data?.error) setListedDates(data) })
+      .catch(() => {})
+  }, [symbols])
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -85,6 +94,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
                   <TableHead className="w-56">1Y Chart</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>52W Range</TableHead>
+                  <TableHead>Trading Since</TableHead>
                   <TableHead className="text-right">
                     {lastUpdated && (
                       <span className="text-[10px] font-normal text-muted-foreground">
@@ -103,6 +113,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
                     priceData={prices[item.symbol]}
                     priceLoading={priceLoading && !prices[item.symbol]}
                     simulationDate={simulationDate}
+                    listedDate={listedDates[item.symbol] ?? null}
                   />
                 ))}
               </TableBody>

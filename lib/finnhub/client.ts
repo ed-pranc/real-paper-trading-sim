@@ -84,6 +84,26 @@ export async function searchSymbols(query: string) {
   return finnhubFetch('/search', { q: query }, 300)
 }
 
+export interface FinnhubProfile {
+  ipo: string | null   // ISO date e.g. "1980-12-12"; null if not available
+  name: string
+  exchange: string
+}
+
+/**
+ * Fetch company/ETF profile from Finnhub — includes IPO/inception date.
+ * Cached 7 days — listing dates never change.
+ */
+export async function getFinnhubProfile(symbol: string): Promise<FinnhubProfile | null> {
+  try {
+    const data = await finnhubFetch('/stock/profile2', { symbol }, 604800)
+    if (!data?.ticker) return null
+    return { ipo: data.ipo ?? null, name: data.name ?? '', exchange: data.exchange ?? '' }
+  } catch {
+    return null
+  }
+}
+
 // Finnhub resolution codes for each interval
 const INTERVAL_TO_RESOLUTION: Record<string, string> = {
   '15min': '15', '30min': '30', '1h': '60',

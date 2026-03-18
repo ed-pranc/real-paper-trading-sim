@@ -16,6 +16,8 @@ import { Loader2, Trash2 } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
+import { fmtDate } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 interface WatchlistRowProps {
   symbol: string
@@ -23,6 +25,7 @@ interface WatchlistRowProps {
   priceData?: BatchPriceData
   priceLoading: boolean
   simulationDate: string | null
+  listedDate?: string | null
 }
 
 function fmt(n: number) {
@@ -35,6 +38,7 @@ export function WatchlistRow({
   priceData,
   priceLoading,
   simulationDate,
+  listedDate,
 }: WatchlistRowProps) {
   const router = useRouter()
   const [sparkData, setSparkData] = useState<{ value: number; datetime: string }[]>([])
@@ -72,10 +76,13 @@ export function WatchlistRow({
     : 50
 
   const changeColor = positive ? 'text-green-500' : 'text-red-500'
+  // Stock is unavailable if its listing date is after the simulation date.
+  // listedDate and simulationDate are both YYYY-MM-DD so string comparison is correct.
+  const unavailable = !!simulationDate && !!listedDate && listedDate > simulationDate
 
   return (
     <>
-      <TableRow>
+      <TableRow className={unavailable ? 'opacity-40' : ''}>
         {/* Symbol + company */}
         <TableCell>
           <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
@@ -142,6 +149,15 @@ export function WatchlistRow({
           )}
         </TableCell>
 
+        {/* Listed date */}
+        <TableCell>
+          {listedDate ? (
+            unavailable
+              ? <Badge className="bg-red-600 text-white hover:bg-red-600 text-xs tabular-nums font-medium">{fmtDate(listedDate)}</Badge>
+              : <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(listedDate)}</span>
+          ) : <span className="text-xs text-muted-foreground">—</span>}
+        </TableCell>
+
         {/* Actions */}
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-2">
@@ -150,13 +166,15 @@ export function WatchlistRow({
                 <Button
                   size="sm"
                   className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-5 font-semibold"
-                  disabled={priceLoading || price === 0}
+                  disabled={priceLoading || price === 0 || unavailable}
                   onClick={() => setBuyOpen(true)}
                 >
                   Buy
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Buy {symbol}</TooltipContent>
+              <TooltipContent>
+                {unavailable ? 'Not yet listed on this date' : `Buy ${symbol}`}
+              </TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
