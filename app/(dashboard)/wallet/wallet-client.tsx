@@ -10,7 +10,7 @@ import { WithdrawModal } from '@/components/wallet/withdraw-modal'
 import { CashDonut } from '@/components/wallet/cash-donut'
 import { PlusCircle, MinusCircle, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle, ArrowUpDown, ArrowUp, ArrowDown, Info, ShieldCheck, TriangleAlert } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { fmtDateTime } from '@/lib/utils'
+import { fmtDate, fmtDateTime } from '@/lib/utils'
 import { LABELS } from '@/lib/labels'
 
 type SortKey = 'date' | 'type' | 'amount'
@@ -224,7 +224,7 @@ export function WalletClient({
                         {fmtDateTime(row.created_at)}
                         {row.simulation_date && (
                           <span className="ml-2 text-[11px] font-medium text-amber-500">
-                            SIM {row.simulation_date}
+                            SIM {fmtDate(row.simulation_date)}
                           </span>
                         )}
                       </TableCell>

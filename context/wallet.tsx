@@ -35,14 +35,14 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   const refresh = useCallback(async () => {
     const supabase = createClient()
 
-    // In sim mode we replay transactions instead of reading the live positions table,
-    // so we get the correct state for the chosen historical date.
-    const [walletRes, positionsRes, realisedRes] = await Promise.all([
+    // In sim mode: replay transactions for positions + reconstruct cash from sim-tagged history.
+    // In live mode: read directly from positions table and wallet_balance.
+    const [walletRes, positionsRes, realisedRes, depositsRes] = await Promise.all([
       supabase.from('wallet_balance').select('cash_balance, updated_at').eq('user_id', userId).single(),
       simulationDate
         ? supabase
             .from('transactions')
-            .select('symbol, type, quantity, price, simulation_date, trade_date')
+            .select('symbol, type, quantity, price, total, simulation_date, trade_date')
             .eq('user_id', userId)
         : supabase.from('positions').select('symbol, quantity, avg_buy_price').eq('user_id', userId),
       simulationDate
@@ -59,9 +59,33 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
             .eq('user_id', userId)
             .eq('type', 'sell')
             .not('pnl', 'is', null),
+      simulationDate
+        ? supabase
+            .from('wallet_deposits')
+            .select('type, amount')
+            .eq('user_id', userId)
+            .not('simulation_date', 'is', null)
+            .lte('simulation_date', simulationDate)
+        : Promise.resolve(null),
     ])
 
-    const cash = Number(walletRes.data?.cash_balance ?? 0)
+    // In sim mode, reconstruct cash from sim-tagged deposits/withdrawals + trade totals up to simDate.
+    // In live mode, use the live wallet balance directly.
+    let cash: number
+    if (simulationDate) {
+      const depositCash = (depositsRes?.data ?? []).reduce(
+        (sum, d) => sum + (d.type === 'deposit' ? Number(d.amount) : -Number(d.amount)),
+        0
+      )
+      type TxWithTotal = { type: string; total: number; simulation_date: string | null }
+      const tradeCash = ((positionsRes.data ?? []) as TxWithTotal[]).reduce((sum, tx) => {
+        if (!tx.simulation_date || tx.simulation_date > simulationDate) return sum
+        return sum + (tx.type === 'sell' ? Number(tx.total) : -Number(tx.total))
+      }, 0)
+      cash = depositCash + tradeCash
+    } else {
+      cash = Number(walletRes.data?.cash_balance ?? 0)
+    }
 
     // Derive effective positions from transaction replay in sim mode
     let positions: { symbol: string; quantity: number; avg_buy_price: number }[]
