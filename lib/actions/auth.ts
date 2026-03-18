@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 /**
  * Signs the current user out and redirects to the login page.
@@ -17,7 +18,8 @@ export async function signOut() {
  * Resets all trading data for the current user to zero.
  * Clears deposits, transactions, snapshots, positions, and wallet balance.
  * Keeps user_profile and watchlist untouched.
- * Redirects to /home on success.
+ * Returns (does not redirect) — caller does a hard window.location reload
+ * to flush the client-side WalletContext state.
  */
 export async function resetData() {
   const supabase = await createClient()
@@ -33,7 +35,7 @@ export async function resetData() {
     .from('wallet_balance')
     .upsert({ user_id: user.id, cash_balance: 0, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
 
-  redirect('/home')
+  revalidatePath('/', 'layout')
 }
 
 /**

@@ -81,6 +81,14 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [isResetting, startReset] = useTransition()
+
+  function handleReset() {
+    startReset(async () => {
+      await resetData()
+      window.location.href = '/home'
+    })
+  }
 
   function handleSave() {
     if (!nickname.trim()) { setError('Nickname is required'); return }
@@ -219,11 +227,11 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <form action={resetData}>
-                  <AlertDialogAction asChild>
-                    <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white">Yes, reset my data</Button>
-                  </AlertDialogAction>
-                </form>
+                <AlertDialogAction asChild>
+                  <Button onClick={handleReset} disabled={isResetting} className="bg-amber-500 hover:bg-amber-600 text-white">
+                    {isResetting ? 'Resetting…' : 'Yes, reset my data'}
+                  </Button>
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
