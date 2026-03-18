@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useSimulationDate } from '@/context/simulation-date'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarClock } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
@@ -14,15 +14,15 @@ today.setHours(0, 0, 0, 0)
 
 export function SimulationDateSelector() {
   const { simulationDate, setSimulationDate, isLive } = useSimulationDate()
-  const [popoverOpen, setPopoverOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   const handleToggle = (checked: boolean) => {
     if (checked) {
       if (!simulationDate) setSimulationDate(format(today, 'yyyy-MM-dd'))
-      setPopoverOpen(true)
+      setDialogOpen(true)
     } else {
       setSimulationDate(null)
-      setPopoverOpen(false)
+      setDialogOpen(false)
     }
   }
 
@@ -31,7 +31,7 @@ export function SimulationDateSelector() {
   const handleSelect = (date: Date | undefined) => {
     if (!date) return
     setSimulationDate(format(date, 'yyyy-MM-dd'))
-    setPopoverOpen(false)
+    setDialogOpen(false)
   }
 
   return (
@@ -41,27 +41,34 @@ export function SimulationDateSelector() {
       <Switch checked={!isLive} onCheckedChange={handleToggle} />
       <Badge onClick={() => handleToggle(true)} className={`cursor-pointer ${!isLive ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>SIMULATION</Badge>
       {!isLive && (
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <button className="h-7 px-2 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent transition-colors">
-              {selectedDate ? format(selectedDate, 'MM/dd/yyyy') : 'Pick date'}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleSelect}
-              disabled={{ after: today }}
-              captionLayout="dropdown"
-              startMonth={new Date(2000, 0)}
-              endMonth={today}
-              defaultMonth={selectedDate}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <button
+          onClick={() => setDialogOpen(true)}
+          className="h-7 px-2 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent transition-colors"
+        >
+          {selectedDate ? format(selectedDate, 'MM/dd/yyyy') : 'Pick date'}
+        </button>
       )}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="w-auto max-w-none p-6">
+          <DialogHeader>
+            <DialogTitle>Select Simulation Date</DialogTitle>
+            <DialogDescription>
+              All prices will be locked to the chosen date.
+            </DialogDescription>
+          </DialogHeader>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleSelect}
+            disabled={{ after: today }}
+            captionLayout="dropdown"
+            startMonth={new Date(2000, 0)}
+            endMonth={today}
+            defaultMonth={selectedDate}
+            initialFocus
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
