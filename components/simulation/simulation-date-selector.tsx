@@ -37,9 +37,9 @@ export function SimulationDateSelector() {
   return (
     <div className="flex items-center gap-2">
       <CalendarClock className="h-4 w-4 text-muted-foreground shrink-0" />
-      <Badge className={isLive ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}>LIVE</Badge>
+      <Badge onClick={() => handleToggle(false)} className={`cursor-pointer ${isLive ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>LIVE</Badge>
       <Switch checked={!isLive} onCheckedChange={handleToggle} />
-      <Badge className={!isLive ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}>SIMULATION</Badge>
+      <Badge onClick={() => handleToggle(true)} className={`cursor-pointer ${!isLive ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/70'}`}>SIMULATION</Badge>
       {!isLive && (
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
