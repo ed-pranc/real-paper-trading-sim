@@ -11,6 +11,7 @@ interface WalletSummary {
   realisedPnl: number
   total: number
   updatedAt: string | null
+  pricesOk: boolean
 }
 
 interface WalletContextValue {
@@ -20,7 +21,7 @@ interface WalletContextValue {
 
 const WalletContext = createContext<WalletContextValue | null>(null)
 
-const DEFAULT: WalletSummary = { cash: 0, invested: 0, pnl: 0, realisedPnl: 0, total: 0, updatedAt: null }
+const DEFAULT: WalletSummary = { cash: 0, invested: 0, pnl: 0, realisedPnl: 0, total: 0, updatedAt: null, pricesOk: true }
 
 /**
  * Provides live wallet summary (cash, invested, unrealised P/L) to the dashboard.
@@ -135,6 +136,7 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
     )
 
     let pnl = 0
+    let pricesOk = true
     if (positions.length > 0) {
       try {
         const priceResults = await Promise.all(
@@ -146,17 +148,20 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
           })
         )
         let currentValue = 0
+        let failedCount = 0
         priceResults.forEach((data, i) => {
           const price = parseFloat(data?.close ?? data?.price ?? '0')
           if (price > 0) {
             currentValue += price * Number(positions[i].quantity)
           } else {
+            failedCount++
             currentValue += Number(positions[i].quantity) * Number(positions[i].avg_buy_price)
           }
         })
         pnl = currentValue - invested
+        if (failedCount > 0) pricesOk = false
       } catch {
-        // pnl stays 0 on error
+        pricesOk = false
       }
     }
 
@@ -167,6 +172,7 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
       realisedPnl,
       total: cash + invested + pnl,
       updatedAt: walletRes.data?.updated_at ?? null,
+      pricesOk,
     })
   }, [userId, simulationDate])
 

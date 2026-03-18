@@ -20,6 +20,7 @@ import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-rea
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import { fmtDate, fmtDateTime } from '@/lib/utils'
 import { LABELS } from '@/lib/labels'
+import { useSimulationDate } from '@/context/simulation-date'
 
 interface Transaction {
   id: string
@@ -59,15 +60,28 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
   const [sortKey, setSortKey] = useState<SortKey>('trade_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [typeFilter, setTypeFilter] = useState<'all' | 'buy' | 'sell'>('all')
+  const { simulationDate } = useSimulationDate()
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortKey(key); setSortDir('desc') }
   }
 
+  // In sim mode, stats only count transactions up to the current sim date.
+  const statsTransactions = useMemo(() => {
+    if (!simulationDate) return transactions
+    return transactions.filter(t => {
+      const effDate = t.simulation_date ?? t.trade_date.slice(0, 10)
+      return effDate <= simulationDate
+    })
+  }, [transactions, simulationDate])
+
   const filtered = useMemo(() => {
     return transactions.filter(t => {
-      const date = t.trade_date.slice(0, 10)
+      // In sim mode, filter by simulation_date; in live mode by trade_date
+      const date = simulationDate
+        ? (t.simulation_date ?? t.trade_date.slice(0, 10))
+        : t.trade_date.slice(0, 10)
       if (from && date < from) return false
       if (to && date > to) return false
       if (typeFilter !== 'all' && t.type !== typeFilter) return false
@@ -80,11 +94,11 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
       else if (sortKey === 'pnl') cmp = (a.pnl ?? 0) - (b.pnl ?? 0)
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [transactions, from, to, sortKey, sortDir, typeFilter])
+  }, [transactions, from, to, sortKey, sortDir, typeFilter, simulationDate])
 
-  const totalIn = transactions.filter(t => t.type === 'buy').reduce((s, t) => s + t.total, 0)
-  const totalOut = transactions.filter(t => t.type === 'sell').reduce((s, t) => s + t.total, 0)
-  const realisedPnL = transactions.filter(t => t.type === 'sell' && t.pnl != null).reduce((s, t) => s + Number(t.pnl ?? 0), 0)
+  const totalIn = statsTransactions.filter(t => t.type === 'buy').reduce((s, t) => s + t.total, 0)
+  const totalOut = statsTransactions.filter(t => t.type === 'sell').reduce((s, t) => s + t.total, 0)
+  const realisedPnL = statsTransactions.filter(t => t.type === 'sell' && t.pnl != null).reduce((s, t) => s + Number(t.pnl ?? 0), 0)
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -94,6 +108,11 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         <p className="text-muted-foreground text-sm mt-1">
           Full record of all your trades. Filter by date range and type. Realised P/L tracks closed positions.
         </p>
+        {simulationDate && (
+          <p className="text-xs text-amber-500 mt-1">
+            Stats showing trades up to sim date {fmtDate(simulationDate)}
+          </p>
+        )}
       </div>
 
       {/* Stats (col-9) + Win Rate ring (col-3) */}
@@ -101,7 +120,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         <Card>
           <CardContent className="pt-5 pb-5">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Trades</p>
-            <p className="text-2xl font-bold mt-1">{transactions.length}</p>
+            <p className="text-2xl font-bold mt-1">{statsTransactions.length}</p>
           </CardContent>
         </Card>
         <Card>
@@ -129,7 +148,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
       <div className="col-span-12 lg:col-span-3">
         <Card className="h-full min-h-[120px]">
           <CardContent className="pt-4 h-full">
-            <WinRateRing transactions={transactions} />
+            <WinRateRing transactions={statsTransactions} />
           </CardContent>
         </Card>
       </div>
@@ -141,7 +160,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
             <CardTitle className="text-base">Cumulative Realised P/L</CardTitle>
           </CardHeader>
           <CardContent>
-            <PnLChart transactions={transactions} />
+            <PnLChart transactions={statsTransactions} />
           </CardContent>
         </Card>
         <Card>
@@ -149,7 +168,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
             <CardTitle className="text-base">Monthly Returns</CardTitle>
           </CardHeader>
           <CardContent>
-            <MonthlyReturns transactions={transactions} />
+            <MonthlyReturns transactions={statsTransactions} />
           </CardContent>
         </Card>
       </div>
