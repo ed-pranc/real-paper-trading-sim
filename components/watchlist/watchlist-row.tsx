@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
-import { Loader2, MoreVertical } from 'lucide-react'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Loader2, Trash2 } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
@@ -22,7 +16,6 @@ interface WatchlistRowProps {
   companyName: string
   priceData?: BatchPriceData
   priceLoading: boolean
-  lastUpdated: string | null
   simulationDate: string | null
 }
 
@@ -35,7 +28,6 @@ export function WatchlistRow({
   companyName,
   priceData,
   priceLoading,
-  lastUpdated,
   simulationDate,
 }: WatchlistRowProps) {
   const router = useRouter()
@@ -118,26 +110,11 @@ export function WatchlistRow({
           {sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
         </div>
 
-        {/* Sell price */}
-        <div className="w-28 shrink-0">
-          {!priceLoading && price > 0 && (
-            <div className="bg-muted rounded-xl px-3 py-1 text-center">
-              <span className="text-sm font-semibold tabular-nums">{fmt(price)}</span>
-              {lastUpdated && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">Updated {lastUpdated}</p>
-              )}
-            </div>
-          )}
-        </div>
-
         {/* Buy price */}
         <div className="w-28 shrink-0">
           {!priceLoading && price > 0 && (
             <div className="bg-green-600/10 border border-green-600/20 rounded-xl px-3 py-1 text-center">
               <span className="text-sm font-semibold tabular-nums text-green-500">{fmt(price)}</span>
-              {lastUpdated && (
-                <p className="text-[10px] text-muted-foreground mt-0.5">Updated {lastUpdated}</p>
-              )}
             </div>
           )}
         </div>
@@ -170,21 +147,14 @@ export function WatchlistRow({
           >
             Buy
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
-              >
-                Remove from watchlist
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

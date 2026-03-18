@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DepositModal } from '@/components/wallet/deposit-modal'
+import { WithdrawModal } from '@/components/wallet/withdraw-modal'
 import { CashDonut } from '@/components/wallet/cash-donut'
-import { PlusCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { PlusCircle, MinusCircle, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { fmtDateTime } from '@/lib/utils'
 import { LABELS } from '@/lib/labels'
 
@@ -18,6 +19,13 @@ interface WalletSummary {
   updatedAt: string | null
 }
 
+interface DepositRow {
+  id: string
+  type: string
+  amount: number
+  created_at: string
+}
+
 function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
@@ -27,11 +35,26 @@ function formatTimestamp(ts: string | null) {
   return `Last update at ${fmtDateTime(ts)}`
 }
 
-export function WalletClient({ summary }: { summary: WalletSummary }) {
+export function WalletClient({
+  summary,
+  depositHistory,
+}: {
+  summary: WalletSummary
+  depositHistory: DepositRow[]
+}) {
   const [depositOpen, setDepositOpen] = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
 
-  const investedPct = summary.total > 0 ? (summary.invested / summary.total) * 100 : 0
   const pnlPositive = summary.pnl >= 0
+
+  // Compute running balance from oldest → newest, then reverse for display
+  const chronological = [...depositHistory].reverse()
+  let running = 0
+  const rowsWithBalance = chronological.map((row) => {
+    running += row.type === 'deposit' ? row.amount : -row.amount
+    return { ...row, runningBalance: running }
+  })
+  const displayRows = rowsWithBalance.reverse()
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -48,7 +71,7 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="flex items-center justify-between gap-6 flex-wrap">
-              {/* Total value + deposit */}
+              {/* Total value + actions */}
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-muted-foreground">Your Total Value</p>
@@ -67,6 +90,14 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Deposit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setWithdrawOpen(true)}
+                  >
+                    <MinusCircle className="h-4 w-4 mr-2" />
+                    Withdraw
                   </Button>
                 </div>
               </div>
@@ -119,31 +150,60 @@ export function WalletClient({ summary }: { summary: WalletSummary }) {
         </div>
       </div>
 
-      {/* Account detail */}
+      {/* Investment Account ledger */}
       <div className="col-span-12">
         <Card>
-          <CardContent className="pt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                  $
-                </div>
-                <div>
-                  <p className="font-medium">Investment Account</p>
-                  <p className="text-xs text-muted-foreground">Virtual trading balance</p>
-                </div>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Investment Account</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {displayRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No transactions yet. Deposit funds to get started.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
+                      <th className="text-left py-2 pr-4 font-medium">Date</th>
+                      <th className="text-left py-2 pr-4 font-medium">Type</th>
+                      <th className="text-right py-2 pr-4 font-medium">Amount</th>
+                      <th className="text-right py-2 font-medium">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border last:border-0 hover:bg-accent/20 transition-colors">
+                        <td className="py-2.5 pr-4 text-muted-foreground tabular-nums">
+                          {fmtDateTime(row.created_at)}
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <span className={`inline-flex items-center gap-1.5 font-medium ${row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
+                            {row.type === 'deposit'
+                              ? <ArrowDownCircle className="h-3.5 w-3.5" />
+                              : <ArrowUpCircle className="h-3.5 w-3.5" />}
+                            {row.type === 'deposit' ? 'Deposit' : 'Withdraw'}
+                          </span>
+                        </td>
+                        <td className={`py-2.5 pr-4 text-right tabular-nums font-medium ${row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
+                          {row.type === 'deposit' ? '+' : '-'}{fmt(row.amount)}
+                        </td>
+                        <td className="py-2.5 text-right tabular-nums font-semibold">
+                          {fmt(row.runningBalance)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <p className="font-semibold">{fmt(summary.total)}</p>
-            </div>
-            <div className="flex justify-between text-sm border-t pt-3">
-              <span className="text-muted-foreground">Available USD</span>
-              <span className="font-medium">{fmt(summary.cash)}</span>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       <DepositModal open={depositOpen} onClose={() => setDepositOpen(false)} />
+      <WithdrawModal open={withdrawOpen} onClose={() => setWithdrawOpen(false)} maxAmount={summary.cash} />
     </div>
   )
 }

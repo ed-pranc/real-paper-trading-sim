@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Wallet, Eye, BarChart2, History, User, ArrowLeftRight } from 'lucide-react'
+import { Wallet, Eye, BarChart2, History, User } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 
@@ -10,7 +10,6 @@ const navItems = [
   { href: '/wallet',    label: 'Wallet',    icon: Wallet },
   { href: '/watchlist', label: 'Watchlist', icon: Eye },
   { href: '/portfolio', label: 'Portfolio', icon: BarChart2 },
-  { href: '/trade',     label: 'Trade',     icon: ArrowLeftRight },
   { href: '/history',   label: 'History',   icon: History },
   { href: '/profile',   label: 'Profile',   icon: User },
 ]

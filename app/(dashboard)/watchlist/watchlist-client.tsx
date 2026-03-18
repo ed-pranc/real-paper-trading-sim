@@ -60,7 +60,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
         <div>
           <h1 className="text-2xl font-bold">My Watchlist</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Monitor stocks with real-time prices. Select a simulation date in the header to view historical data.
+            Monitor prices and trade directly from this list. Add a market above, then use the Buy button to place an order.
           </p>
         </div>
         <Button
@@ -80,10 +80,13 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
               <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Markets</div>
               <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Change 1D</div>
               <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">1Y Chart</div>
-              <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Sell</div>
               <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Buy</div>
               <div className="flex-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">52W Range</div>
-              <div className="w-24 shrink-0"></div>
+              <div className="w-24 shrink-0 text-right">
+                {lastUpdated && (
+                  <span className="text-[10px] text-muted-foreground">Updated {lastUpdated}</span>
+                )}
+              </div>
             </div>
             {items.map((item) => (
               <WatchlistRow
@@ -92,7 +95,6 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
                 companyName={item.company_name}
                 priceData={prices[item.symbol]}
                 priceLoading={priceLoading && !prices[item.symbol]}
-                lastUpdated={lastUpdated}
                 simulationDate={simulationDate}
               />
             ))}
