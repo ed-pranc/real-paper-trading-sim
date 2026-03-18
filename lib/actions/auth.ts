@@ -14,6 +14,29 @@ export async function signOut() {
 }
 
 /**
+ * Resets all trading data for the current user to zero.
+ * Clears deposits, transactions, snapshots, positions, and wallet balance.
+ * Keeps user_profile and watchlist untouched.
+ * Redirects to /home on success.
+ */
+export async function resetData() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const tables = ['wallet_deposits', 'transactions', 'portfolio_snapshots', 'positions']
+  for (const table of tables) {
+    await supabase.from(table).delete().eq('user_id', user.id)
+  }
+
+  await supabase
+    .from('wallet_balance')
+    .upsert({ user_id: user.id, cash_balance: 0, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+
+  redirect('/home')
+}
+
+/**
  * Permanently deletes the current user's account and all associated data.
  * Deletes DB rows in dependency order, then removes the auth user via admin client.
  * Redirects to /login on success.

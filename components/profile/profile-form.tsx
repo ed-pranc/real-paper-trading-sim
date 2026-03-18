@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { saveProfile } from '@/lib/actions/profile'
-import { deleteAccount } from '@/lib/actions/auth'
+import { resetData, deleteAccount } from '@/lib/actions/auth'
 import { Loader2, CheckCircle2 } from 'lucide-react'
 import {
   AlertDialog,
@@ -192,6 +192,40 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Reset Data */}
+      <Card className="border-amber-500/40">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-amber-500">Reset Trading Data</CardTitle>
+          <CardDescription className="text-sm">
+            Wipe all deposits, trades, positions, and wallet balance back to zero. Your profile and watchlist are kept.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10 hover:text-amber-500">Reset Data</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset all trading data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will delete all deposits, transactions, positions, and reset your cash balance to $0.
+                  Your profile and watchlist will not be affected. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <form action={resetData}>
+                  <AlertDialogAction asChild>
+                    <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white">Yes, reset my data</Button>
+                  </AlertDialogAction>
+                </form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
 
