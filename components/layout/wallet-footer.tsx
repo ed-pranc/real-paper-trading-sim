@@ -3,6 +3,7 @@
 import { useWallet } from '@/context/wallet'
 import { useSimulationDate } from '@/context/simulation-date'
 import { LABELS } from '@/lib/labels'
+import { Badge } from '@/components/ui/badge'
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
@@ -49,12 +50,12 @@ export function WalletFooter() {
           <span className="text-xl font-bold tabular-nums tracking-tight text-primary">{fmt(total)}</span>
           <span className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{LABELS.totalValue}</span>
           {isSim && (
-            <button
+            <Badge
               onClick={() => setSimulationDate(null)}
-              className="text-[10px] text-primary underline underline-offset-2 hover:opacity-70 transition-opacity mt-0.5"
+              className="bg-green-600 text-white hover:bg-green-700 cursor-pointer mt-1"
             >
-              Go Live
-            </button>
+              LIVE
+            </Badge>
           )}
         </div>
 
