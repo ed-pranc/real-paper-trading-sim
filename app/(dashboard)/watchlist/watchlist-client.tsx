@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SearchModal } from '@/components/watchlist/search-modal'
 import { WatchlistRow } from '@/components/watchlist/watchlist-row'
 import { useSimulationDate } from '@/context/simulation-date'
-import { Plus, Eye } from 'lucide-react'
+import { Plus, Eye, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import { toast } from 'sonner'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
 
@@ -14,6 +14,40 @@ interface WatchlistItem {
   symbol: string
   company_name: string
   added_at: string
+}
+
+type SortCol = 'market' | 'change' | 'price' | 'tradingSince'
+
+const DEFAULT_DIR: Record<SortCol, 'asc' | 'desc'> = {
+  market:       'asc',
+  change:       'desc',
+  price:        'desc',
+  tradingSince: 'asc',
+}
+
+function SortHeader({
+  col, label, currentCol, dir, onSort,
+}: {
+  col: SortCol
+  label: string
+  currentCol: SortCol | null
+  dir: 'asc' | 'desc'
+  onSort: (col: SortCol) => void
+}) {
+  const active = col === currentCol
+  return (
+    <button
+      onClick={() => onSort(col)}
+      className="flex items-center gap-1 hover:text-foreground transition-colors whitespace-nowrap"
+    >
+      {label}
+      {active
+        ? dir === 'asc'
+          ? <ArrowUp className="h-3 w-3" />
+          : <ArrowDown className="h-3 w-3" />
+        : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+    </button>
+  )
 }
 
 export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
@@ -25,7 +59,45 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [listedDates, setListedDates] = useState<Record<string, string | null>>({})
 
+  const [sortCol, setSortCol] = useState<SortCol | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
   const symbols = items.map(i => i.symbol).join(',')
+
+  const toggleSort = useCallback((col: SortCol) => {
+    setSortCol(prev => {
+      if (prev === col) {
+        setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+        return col
+      }
+      setSortDir(DEFAULT_DIR[col])
+      return col
+    })
+  }, [])
+
+  const sortedItems = useMemo(() => {
+    if (!sortCol) return items
+    return [...items].sort((a, b) => {
+      let aVal: string | number
+      let bVal: string | number
+      switch (sortCol) {
+        case 'market':
+          aVal = a.symbol; bVal = b.symbol; break
+        case 'change':
+          aVal = prices[a.symbol]?.change ?? 0
+          bVal = prices[b.symbol]?.change ?? 0; break
+        case 'price':
+          aVal = prices[a.symbol]?.price ?? 0
+          bVal = prices[b.symbol]?.price ?? 0; break
+        case 'tradingSince':
+          aVal = listedDates[a.symbol] ?? '9999-12-31'
+          bVal = listedDates[b.symbol] ?? '9999-12-31'; break
+      }
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [items, sortCol, sortDir, prices, listedDates])
 
   const fetchPrices = useCallback(async () => {
     if (!symbols) return
@@ -89,12 +161,20 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Market</TableHead>
-                  <TableHead>Change 1D</TableHead>
+                  <TableHead>
+                    <SortHeader col="market" label="Market" currentCol={sortCol} dir={sortDir} onSort={toggleSort} />
+                  </TableHead>
+                  <TableHead>
+                    <SortHeader col="change" label="Change 1D" currentCol={sortCol} dir={sortDir} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead className="w-56">1Y Chart</TableHead>
-                  <TableHead>Price</TableHead>
+                  <TableHead>
+                    <SortHeader col="price" label="Price" currentCol={sortCol} dir={sortDir} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead>52W Range</TableHead>
-                  <TableHead>Trading Since</TableHead>
+                  <TableHead>
+                    <SortHeader col="tradingSince" label="Trading Since" currentCol={sortCol} dir={sortDir} onSort={toggleSort} />
+                  </TableHead>
                   <TableHead className="text-right">
                     {lastUpdated && (
                       <span className="text-[10px] font-normal text-muted-foreground">
@@ -105,7 +185,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item) => (
+                {sortedItems.map((item) => (
                   <WatchlistRow
                     key={item.symbol}
                     symbol={item.symbol}

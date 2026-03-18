@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
   TableBody,
@@ -135,173 +134,160 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         </Card>
       </div>
 
-      {/* Tabbed sections */}
-      <div className="col-span-12">
-        <Tabs defaultValue="transactions">
-          <TabsList className="mb-4">
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="pnl">P/L Chart</TabsTrigger>
-            <TabsTrigger value="monthly">Monthly Returns</TabsTrigger>
-          </TabsList>
-
-          {/* Transactions tab */}
-          <TabsContent value="transactions">
-            {transactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <History className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-semibold text-lg">No transactions yet</h3>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Buy or sell stocks from the Watchlist page to see them here
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Filters */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">From</span>
-                    <Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 w-36 text-xs" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">To</span>
-                    <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 w-36 text-xs" />
-                  </div>
-                  <div className="flex gap-1">
-                    {(['all', 'buy', 'sell'] as const).map(t => (
-                      <Button
-                        key={t}
-                        variant={typeFilter === t ? 'default' : 'outline'}
-                        size="sm"
-                        className="rounded-full h-8 px-3 text-xs capitalize"
-                        onClick={() => setTypeFilter(t)}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
-                  {(from || to || typeFilter !== 'all') && (
-                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}>
-                      Clear
-                    </Button>
-                  )}
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {filtered.length} of {transactions.length} transactions
-                  </span>
-                </div>
-
-                <Card>
-                  {filtered.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      No transactions match the current filters
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-8"></TableHead>
-                          <TableHead><SortBtn k="symbol" label="Asset" onToggle={toggleSort} /></TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Price</TableHead>
-                          <TableHead className="text-right">
-                            <SortBtn k="total" label="Total" onToggle={toggleSort} className="justify-end w-full" />
-                          </TableHead>
-                          <TableHead className="text-right">
-                            <SortBtn k="pnl" label="P/L" onToggle={toggleSort} className="justify-end w-full" />
-                          </TableHead>
-                          <TableHead>
-                            <SortBtn k="trade_date" label="Trade Date" onToggle={toggleSort} />
-                          </TableHead>
-                          <TableHead className="hidden xl:table-cell">Sim Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filtered.map(t => {
-                          const pnlPositive = (t.pnl ?? 0) >= 0
-                          return (
-                            <TableRow key={t.id}>
-                              <TableCell>
-                                {t.type === 'buy'
-                                  ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
-                                  : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
-                              </TableCell>
-                              <TableCell>
-                                <StockDetailSheet symbol={t.symbol} companyName={t.company_name} simulationDate={t.simulation_date}>
-                                  <div className="cursor-pointer hover:opacity-80 transition-opacity">
-                                    <p className="font-semibold text-sm">{t.symbol}</p>
-                                    <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
-                                  </div>
-                                </StockDetailSheet>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`} variant="outline">
-                                  {t.type.toUpperCase()}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="text-sm tabular-nums">{Number(t.quantity).toFixed(6)}</span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="text-sm tabular-nums">{fmt(t.price)}</span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="text-sm font-medium tabular-nums">{fmt(t.total)}</span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {t.type === 'sell' && t.pnl != null ? (
-                                  <span className={`text-sm font-semibold tabular-nums ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-                                    {pnlPositive ? '+' : ''}{fmt(Number(t.pnl))}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <span className="text-xs text-muted-foreground">{fmtDateTime(t.trade_date)}</span>
-                              </TableCell>
-                              <TableCell className="hidden xl:table-cell">
-                                {t.simulation_date ? (
-                                  <Badge variant="secondary" className="text-xs">{fmtDate(t.simulation_date)}</Badge>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">Live</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  )}
-                </Card>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* P/L Chart tab */}
-          <TabsContent value="pnl">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Cumulative Realised P/L</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PnLChart transactions={transactions} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Monthly Returns tab */}
-          <TabsContent value="monthly">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Monthly Returns</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MonthlyReturns transactions={transactions} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+      {/* Charts — side by side */}
+      <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Cumulative Realised P/L</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PnLChart transactions={transactions} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Monthly Returns</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MonthlyReturns transactions={transactions} />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Transactions */}
+      <div className="col-span-12">
+        <h2 className="text-base font-semibold mb-3">Transactions</h2>
+        {transactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <History className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-lg">No transactions yet</h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Buy or sell stocks from the Watchlist page to see them here
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">From</span>
+                <Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-8 w-36 text-xs" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">To</span>
+                <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-8 w-36 text-xs" />
+              </div>
+              <div className="flex gap-1">
+                {(['all', 'buy', 'sell'] as const).map(t => (
+                  <Button
+                    key={t}
+                    variant={typeFilter === t ? 'default' : 'outline'}
+                    size="sm"
+                    className="rounded-full h-8 px-3 text-xs capitalize"
+                    onClick={() => setTypeFilter(t)}
+                  >
+                    {t}
+                  </Button>
+                ))}
+              </div>
+              {(from || to || typeFilter !== 'all') && (
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFrom(''); setTo(''); setTypeFilter('all') }}>
+                  Clear
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground ml-auto">
+                {filtered.length} of {transactions.length} transactions
+              </span>
+            </div>
+
+            <Card>
+              {filtered.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  No transactions match the current filters
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"></TableHead>
+                      <TableHead><SortBtn k="symbol" label="Asset" onToggle={toggleSort} /></TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">
+                        <SortBtn k="total" label="Total" onToggle={toggleSort} className="justify-end w-full" />
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <SortBtn k="pnl" label="P/L" onToggle={toggleSort} className="justify-end w-full" />
+                      </TableHead>
+                      <TableHead>
+                        <SortBtn k="trade_date" label="Trade Date" onToggle={toggleSort} />
+                      </TableHead>
+                      <TableHead className="hidden xl:table-cell">Sim Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map(t => {
+                      const pnlPositive = (t.pnl ?? 0) >= 0
+                      return (
+                        <TableRow key={t.id}>
+                          <TableCell>
+                            {t.type === 'buy'
+                              ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
+                              : <ArrowUpCircle className="h-5 w-5 text-red-500" />}
+                          </TableCell>
+                          <TableCell>
+                            <StockDetailSheet symbol={t.symbol} companyName={t.company_name} simulationDate={t.simulation_date}>
+                              <div className="cursor-pointer hover:opacity-80 transition-opacity">
+                                <p className="font-semibold text-sm">{t.symbol}</p>
+                                <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
+                              </div>
+                            </StockDetailSheet>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`} variant="outline">
+                              {t.type.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-sm tabular-nums">{Number(t.quantity).toFixed(6)}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-sm tabular-nums">{fmt(t.price)}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-sm font-medium tabular-nums">{fmt(t.total)}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {t.type === 'sell' && t.pnl != null ? (
+                              <span className={`text-sm font-semibold tabular-nums ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
+                                {pnlPositive ? '+' : ''}{fmt(Number(t.pnl))}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">{fmtDateTime(t.trade_date)}</span>
+                          </TableCell>
+                          <TableCell className="hidden xl:table-cell">
+                            {t.simulation_date ? (
+                              <Badge variant="secondary" className="text-xs">{fmtDate(t.simulation_date)}</Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Live</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
+
     </div>
   )
 }

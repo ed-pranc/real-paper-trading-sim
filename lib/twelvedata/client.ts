@@ -96,7 +96,8 @@ export async function getTwelveDataEarliestDate(symbol: string): Promise<string 
   try {
     const data = await tdFetch('/earliest_timestamp', { symbol, interval: '1day' }, 604800)
     return (data?.datetime as string) ?? null
-  } catch {
+  } catch (err) {
+    console.warn(`[profile] Twelve Data earliest_timestamp failed for ${symbol}:`, err)
     return null
   }
 }

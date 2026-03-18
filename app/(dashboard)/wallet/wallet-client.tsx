@@ -12,17 +12,11 @@ import { PlusCircle, MinusCircle, TrendingUp, TrendingDown, ArrowDownCircle, Arr
 import { Separator } from '@/components/ui/separator'
 import { fmtDate, fmtDateTime } from '@/lib/utils'
 import { LABELS } from '@/lib/labels'
+import { useWallet } from '@/context/wallet'
+import { useSimulationDate } from '@/context/simulation-date'
 
 type SortKey = 'date' | 'type' | 'amount'
 type SortDir = 'asc' | 'desc'
-
-interface WalletSummary {
-  cash: number
-  invested: number
-  pnl: number
-  total: number
-  updatedAt: string | null
-}
 
 interface DepositRow {
   id: string
@@ -41,13 +35,9 @@ function formatTimestamp(ts: string | null) {
   return `Last update at ${fmtDateTime(ts)}`
 }
 
-export function WalletClient({
-  summary,
-  depositHistory,
-}: {
-  summary: WalletSummary
-  depositHistory: DepositRow[]
-}) {
+export function WalletClient({ depositHistory }: { depositHistory: DepositRow[] }) {
+  const { summary } = useWallet()
+  const { simulationDate } = useSimulationDate()
   const [depositOpen, setDepositOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('date')
@@ -55,12 +45,18 @@ export function WalletClient({
 
   const pnlPositive = summary.pnl >= 0
 
-  // Always compute running balance in chronological order
+  function isFuture(row: DepositRow): boolean {
+    if (!simulationDate || !row.simulation_date) return false
+    return row.simulation_date > simulationDate
+  }
+
+  // Running balance in chronological order; future rows don't move the balance
   const chronological = [...depositHistory].reverse()
   let running = 0
   const rowsWithBalance = chronological.map((row) => {
-    running += row.type === 'deposit' ? row.amount : -row.amount
-    return { ...row, runningBalance: running }
+    const future = isFuture(row)
+    if (!future) running += row.type === 'deposit' ? row.amount : -row.amount
+    return { ...row, runningBalance: running, future }
   })
 
   const displayRows = useMemo(() => {
@@ -85,12 +81,10 @@ export function WalletClient({
       : <ArrowDown className="h-3 w-3 ml-1" />
   }
 
-  const totalDeposited = depositHistory
-    .filter(r => r.type === 'deposit')
-    .reduce((s, r) => s + r.amount, 0)
-  const totalWithdrawn = depositHistory
-    .filter(r => r.type === 'withdraw')
-    .reduce((s, r) => s + r.amount, 0)
+  // Tax position: only count active (non-future) rows
+  const activeRows = depositHistory.filter(r => !isFuture(r))
+  const totalDeposited = activeRows.filter(r => r.type === 'deposit').reduce((s, r) => s + r.amount, 0)
+  const totalWithdrawn = activeRows.filter(r => r.type === 'withdraw').reduce((s, r) => s + r.amount, 0)
   const taxHeadroom = totalDeposited - totalWithdrawn
 
   return (
@@ -219,27 +213,27 @@ export function WalletClient({
                 </TableHeader>
                 <TableBody>
                   {displayRows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className={row.future ? 'opacity-40' : ''}>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {fmtDateTime(row.created_at)}
                         {row.simulation_date && (
-                          <span className="ml-2 text-[11px] font-medium text-amber-500">
+                          <span className={`ml-2 text-[11px] font-medium ${row.future ? 'text-muted-foreground italic' : 'text-amber-500'}`}>
                             SIM {fmtDate(row.simulation_date)}
                           </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center gap-1.5 font-medium ${row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
+                        <span className={`inline-flex items-center gap-1.5 font-medium ${row.future ? 'text-muted-foreground' : row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
                           {row.type === 'deposit'
                             ? <ArrowDownCircle className="h-3.5 w-3.5" />
                             : <ArrowUpCircle className="h-3.5 w-3.5" />}
                           {row.type === 'deposit' ? 'Deposit' : 'Withdraw'}
                         </span>
                       </TableCell>
-                      <TableCell className={`text-right tabular-nums font-medium ${row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
+                      <TableCell className={`text-right tabular-nums font-medium ${row.future ? 'text-muted-foreground' : row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
                         {row.type === 'deposit' ? '+' : '-'}{fmt(row.amount)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">
+                      <TableCell className={`text-right tabular-nums ${row.future ? 'text-muted-foreground' : 'font-semibold'}`}>
                         {fmt(row.runningBalance)}
                       </TableCell>
                     </TableRow>
@@ -252,7 +246,7 @@ export function WalletClient({
       </div>
 
       {/* Tax position info block */}
-      {depositHistory.length > 0 && (
+      {activeRows.length > 0 && (
         <div className="col-span-12">
           <div className="border rounded-lg bg-muted/30 p-5 space-y-4">
             {/* Header */}

@@ -12,7 +12,7 @@ import {
 import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
-import { Loader2, Trash2, FastForward } from 'lucide-react'
+import { Loader2, Trash2, FastForward, Rewind } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import type { BatchPriceData } from '@/app/api/market/prices/route'
@@ -46,10 +46,25 @@ export function WatchlistRow({
   const [sparkData, setSparkData] = useState<{ value: number; datetime: string }[]>([])
   const [buyOpen, setBuyOpen] = useState(false)
 
+  /** Determine how many calendar days are available between listing and current sim/live date */
+  function chartConfig(listedDate: string | null | undefined, endDate: string | null): { outputsize: number; label: string } | null {
+    if (!listedDate) return { outputsize: 260, label: '1Y' }
+    const end = endDate ? new Date(endDate) : new Date()
+    const start = new Date(listedDate)
+    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    if (days < 30)  return null               // too little data — hide chart
+    if (days < 90)  return { outputsize: 22,  label: '1M' }
+    if (days < 180) return { outputsize: 65,  label: '3M' }
+    if (days < 365) return { outputsize: 130, label: '6M' }
+    return { outputsize: 260, label: '1Y' }
+  }
+
   const fetchSparkline = useCallback(async () => {
+    const cfg = chartConfig(listedDate, simulationDate)
+    if (!cfg) { setSparkData([]); return }
     const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
     try {
-      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=260${endParam}`)
+      const res = await fetch(`/api/market/timeseries?symbol=${symbol}&interval=1day&outputsize=${cfg.outputsize}${endParam}`)
       const data = await res.json()
       if (data?.values) {
         const sorted = [...data.values].reverse()
@@ -61,7 +76,7 @@ export function WatchlistRow({
     } catch {
       // sparkline failure is silent
     }
-  }, [symbol, simulationDate])
+  }, [symbol, simulationDate, listedDate])
 
   useEffect(() => {
     fetchSparkline()
@@ -122,7 +137,17 @@ export function WatchlistRow({
 
         {/* 1Y Sparkline */}
         <TableCell className={`w-56 ${dim}`}>
-          {!unavailable && sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
+          {!unavailable && sparkData.length > 0 && (
+            <div>
+              <Sparkline data={sparkData} positive={positive} />
+              {(() => {
+                const cfg = chartConfig(listedDate, simulationDate)
+                return cfg && cfg.label !== '1Y'
+                  ? <p className="text-[10px] text-muted-foreground opacity-70 mt-0.5">{cfg.label} Chart</p>
+                  : null
+              })()}
+            </div>
+          )}
         </TableCell>
 
         {/* Buy price pill */}
@@ -175,7 +200,26 @@ export function WatchlistRow({
                 </Tooltip>
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground tabular-nums">{fmtDate(listedDate)}</span>
+              <div className="flex items-center gap-1.5">
+              <Badge className="bg-muted text-muted-foreground hover:bg-muted text-xs tabular-nums font-medium">
+                {fmtDate(listedDate)}
+              </Badge>
+              {simulationDate && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-muted-foreground hover:text-muted-foreground/70 hover:bg-muted/50"
+                      onClick={() => setSimulationDate(listedDate)}
+                    >
+                      <Rewind className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Rewind to {fmtDate(listedDate)} — first day {symbol} traded</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
             )
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </TableCell>
