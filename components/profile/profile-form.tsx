@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { saveProfile } from '@/lib/actions/profile'
-import { Loader2, CheckCircle2, User } from 'lucide-react'
+import { Loader2, CheckCircle2 } from 'lucide-react'
 
 interface ProfileData {
   nickname: string | null
@@ -37,12 +39,14 @@ function Field({
   placeholder?: string
   required?: boolean
 }) {
+  const id = label.toLowerCase().replace(/\s+/g, '-')
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium leading-none">
+    <div className="space-y-1.5" suppressHydrationWarning>
+      <Label htmlFor={id}>
         {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      </Label>
       <Input
+        id={id}
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -89,45 +93,32 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      {/* Full-width header */}
-      <div className="col-span-12">
+    <div className="space-y-6 max-w-2xl">
+      <div>
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Manage your personal details. Your nickname appears in the sidebar and header.
         </p>
       </div>
 
-      {/* Left: account card */}
-      <div className="col-span-12 lg:col-span-3 space-y-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Account
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold shrink-0">
-                {(nickname || email || 'T')[0].toUpperCase()}
-              </div>
-              <div>
-                <p className="font-medium">{nickname || 'No nickname set'}</p>
-                <p className="text-sm text-muted-foreground">{email}</p>
-              </div>
+      <Card>
+        <CardContent className="pt-6 space-y-6">
+          {/* Account header */}
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary shrink-0">
+              {(nickname || email || 'T')[0].toUpperCase()}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div>
+              <p className="font-semibold">{nickname || 'No nickname set'}</p>
+              <p className="text-sm text-muted-foreground">{email}</p>
+            </div>
+          </div>
 
-      {/* Right: form cards + save */}
-      <div className="col-span-12 lg:col-span-9 space-y-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Personal Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <Separator />
+
+          {/* Personal details */}
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Personal Details</p>
             <Field
               label="Nickname"
               value={nickname}
@@ -139,14 +130,13 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
               <Field label="First Name" value={firstName} onChange={setFirstName} placeholder="John" />
               <Field label="Last Name" value={lastName} onChange={setLastName} placeholder="Smith" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <Separator />
+
+          {/* Address */}
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Address</p>
             <Field label="Address Line 1" value={address1} onChange={setAddress1} placeholder="Street and number" />
             <Field label="Address Line 2" value={address2} onChange={setAddress2} placeholder="Apartment, suite, etc." />
             <div className="grid grid-cols-2 gap-4">
@@ -154,7 +144,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
               <Field label="Postal Code" value={postalCode} onChange={setPostalCode} placeholder="LT-01001" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium leading-none">Country</label>
+              <Label htmlFor="country">Country</Label>
               <Select value={country} onValueChange={(v) => { if (v) setCountry(v) }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select country" />
@@ -164,32 +154,34 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          <Separator />
 
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleSave}
-            disabled={isPending}
-            className="rounded-full bg-green-600 hover:bg-green-700 px-8"
-          >
-            {isPending ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving…</>
-            ) : (
-              'Save Profile'
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleSave}
+              disabled={isPending}
+              className="rounded-full bg-green-600 hover:bg-green-700 px-8"
+            >
+              {isPending ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving…</>
+              ) : (
+                'Save Profile'
+              )}
+            </Button>
+
+            {saved && (
+              <div className="flex items-center gap-1.5 text-sm text-green-500">
+                <CheckCircle2 className="h-4 w-4" />
+                Profile saved
+              </div>
             )}
-          </Button>
-
-          {saved && (
-            <div className="flex items-center gap-1.5 text-sm text-green-500">
-              <CheckCircle2 className="h-4 w-4" />
-              Profile saved
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

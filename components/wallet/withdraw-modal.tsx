@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { withdrawFunds } from '@/lib/actions/wallet'
 import { useWallet } from '@/context/wallet'
 import confetti from 'canvas-confetti'
@@ -93,19 +94,23 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
                 </p>
               </div>
 
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                <Input
-                  type="number"
-                  min="1"
-                  max={maxAmount}
-                  placeholder="10,000"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pl-7 text-lg"
-                  onKeyDown={(e) => e.key === 'Enter' && handleWithdraw()}
-                  autoFocus
-                />
+              <div className="space-y-1.5">
+                <Label htmlFor="withdraw-amount">Amount (USD)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    id="withdraw-amount"
+                    type="number"
+                    min="1"
+                    max={maxAmount}
+                    placeholder="10,000"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="pl-7 text-lg"
+                    onKeyDown={(e) => e.key === 'Enter' && handleWithdraw()}
+                    autoFocus
+                  />
+                </div>
               </div>
 
               {happinessUnits > 0 && (

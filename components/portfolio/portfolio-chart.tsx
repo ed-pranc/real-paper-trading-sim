@@ -1,8 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, ReferenceLine } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 const PERIODS = ['1D', '1W', '1M', '6M', '1Y', '2Y', '5Y', '10Y'] as const
 type Period = typeof PERIODS[number]
@@ -89,7 +96,13 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
   }, [period, symbols, simulationDate])
 
   const positive = chartData.length < 2 || chartData[chartData.length - 1]?.value >= chartData[0]?.value
+  const color = positive ? '#22c55e' : '#ef4444'
   const isIntraday = TIMESERIES_CONFIG[period].intraday
+  const gradientId = `portfolioGrad-${positive ? 'pos' : 'neg'}`
+
+  const chartConfig = {
+    value: { label: 'Portfolio Value' },
+  } satisfies ChartConfig
 
   return (
     <div className="space-y-3">
@@ -108,55 +121,52 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
         ))}
       </div>
 
-      {/* Chart */}
       {loading ? (
-        <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-          Loading chart…
-        </div>
+        <Skeleton className="h-48 w-full" />
       ) : chartError === 'api-error' ? (
         <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
           Price data temporarily unavailable. Check API limits.
         </div>
       ) : chartData.length > 1 ? (
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={positive ? '#22c55e' : '#ef4444'} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={positive ? '#22c55e' : '#ef4444'} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                interval="preserveStartEnd"
-                tickFormatter={(v) => formatTick(v, isIntraday)}
-              />
-              <YAxis hide domain={['auto', 'auto']} />
-              <Tooltip
-                formatter={(v) => [`$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Portfolio Value']}
-                labelFormatter={(label) => formatTick(label, isIntraday)}
-                labelStyle={{ fontSize: 11 }}
-                contentStyle={{ fontSize: 11 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke={positive ? '#22c55e' : '#ef4444'}
-                strokeWidth={2}
-                fill="url(#portfolioGrad)"
-                dot={false}
-                isAnimationActive={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartContainer config={chartConfig} className="h-48">
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+              tickFormatter={(v) => formatTick(v, isIntraday)}
+            />
+            <YAxis hide domain={['auto', 'auto']} />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(v) => [`$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Portfolio Value']}
+                  labelFormatter={(label) => formatTick(label, isIntraday)}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#${gradientId})`}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ChartContainer>
       ) : (
         <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
-          {loading ? '' : `No data available for ${period}.`}
+          {`No data available for ${period}.`}
         </div>
       )}
     </div>

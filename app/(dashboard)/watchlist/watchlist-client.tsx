@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { SearchModal } from '@/components/watchlist/search-modal'
 import { WatchlistRow } from '@/components/watchlist/watchlist-row'
 import { useSimulationDate } from '@/context/simulation-date'
@@ -75,29 +76,37 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
       {/* Full-width table or empty state */}
       <div className="col-span-12">
         {items.length > 0 ? (
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30">
-              <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Markets</div>
-              <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Change 1D</div>
-              <div className="w-52 shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">1Y Chart</div>
-              <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground text-center uppercase tracking-wider">Buy</div>
-              <div className="flex-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">52W Range</div>
-              <div className="w-24 shrink-0 text-right">
-                {lastUpdated && (
-                  <span className="text-[10px] text-muted-foreground">Updated {lastUpdated}</span>
-                )}
-              </div>
-            </div>
-            {items.map((item) => (
-              <WatchlistRow
-                key={item.symbol}
-                symbol={item.symbol}
-                companyName={item.company_name}
-                priceData={prices[item.symbol]}
-                priceLoading={priceLoading && !prices[item.symbol]}
-                simulationDate={simulationDate}
-              />
-            ))}
+          <div className="rounded-lg border border-border overflow-hidden bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Market</TableHead>
+                  <TableHead>Change 1D</TableHead>
+                  <TableHead className="w-56">1Y Chart</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>52W Range</TableHead>
+                  <TableHead className="text-right">
+                    {lastUpdated && (
+                      <span className="text-[10px] font-normal text-muted-foreground">
+                        Updated {lastUpdated}
+                      </span>
+                    )}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => (
+                  <WatchlistRow
+                    key={item.symbol}
+                    symbol={item.symbol}
+                    companyName={item.company_name}
+                    priceData={prices[item.symbol]}
+                    priceLoading={priceLoading && !prices[item.symbol]}
+                    simulationDate={simulationDate}
+                  />
+                ))}
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { PortfolioRow } from '@/components/portfolio/portfolio-row'
 import { PortfolioChart } from '@/components/portfolio/portfolio-chart'
 import { CompositionDonut } from '@/components/portfolio/composition-donut'
@@ -270,42 +271,46 @@ export function PortfolioClient({
           {/* Positions table — full width */}
           <div className="col-span-12">
             <Card>
-              <div className="flex items-center gap-4 px-4 py-2 border-b border-border bg-muted/30 rounded-t-lg">
-                <div className="w-48 shrink-0 text-xs font-medium text-muted-foreground">Asset</div>
-                <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">Current Price</div>
-                <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Units</div>
-                <div className="w-24 shrink-0 text-xs font-medium text-muted-foreground">Buy Price</div>
-                <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">Trade Date</div>
-                <div className="w-28 shrink-0 text-xs font-medium text-muted-foreground">P/L</div>
-                <div className="flex-1 text-xs font-medium text-muted-foreground">Value</div>
-                <div className="w-36 shrink-0"></div>
-              </div>
-              {/* Active (current as-of-sim-date) positions first */}
-              {activePositions.map((p) => (
-                <PortfolioRow
-                  key={p.symbol}
-                  symbol={p.symbol}
-                  companyName={p.company_name}
-                  quantity={p.quantity}
-                  avgBuyPrice={p.avg_buy_price}
-                  openedDate={p.opened_date}
-                  isFuture={false}
-                  onPriceLoaded={handlePriceLoaded}
-                />
-              ))}
-              {/* Future (greyed) positions */}
-              {futurePositions.map((p) => (
-                <PortfolioRow
-                  key={p.symbol}
-                  symbol={p.symbol}
-                  companyName={p.company_name}
-                  quantity={p.quantity}
-                  avgBuyPrice={p.avg_buy_price}
-                  openedDate={p.opened_date}
-                  isFuture={true}
-                  onPriceLoaded={handlePriceLoaded}
-                />
-              ))}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Asset</TableHead>
+                    <TableHead>Current Price</TableHead>
+                    <TableHead>Units</TableHead>
+                    <TableHead>Buy Price</TableHead>
+                    <TableHead>Trade Date</TableHead>
+                    <TableHead>P/L</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activePositions.map((p) => (
+                    <PortfolioRow
+                      key={p.symbol}
+                      symbol={p.symbol}
+                      companyName={p.company_name}
+                      quantity={p.quantity}
+                      avgBuyPrice={p.avg_buy_price}
+                      openedDate={p.opened_date}
+                      isFuture={false}
+                      onPriceLoaded={handlePriceLoaded}
+                    />
+                  ))}
+                  {futurePositions.map((p) => (
+                    <PortfolioRow
+                      key={p.symbol}
+                      symbol={p.symbol}
+                      companyName={p.company_name}
+                      quantity={p.quantity}
+                      avgBuyPrice={p.avg_buy_price}
+                      openedDate={p.opened_date}
+                      isFuture={true}
+                      onPriceLoaded={handlePriceLoaded}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
           </div>
         </>

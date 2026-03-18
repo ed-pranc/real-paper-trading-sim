@@ -3,9 +3,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { TableCell, TableRow } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Skeleton } from '@/components/ui/skeleton'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
-import { Loader2 } from 'lucide-react'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import { cn, fmtDate } from '@/lib/utils'
@@ -23,7 +30,6 @@ interface PortfolioRowProps {
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-
 
 export function PortfolioRow({
   symbol,
@@ -46,10 +52,7 @@ export function PortfolioRow({
       const dateParam = simulationDate ? `&date=${simulationDate}` : ''
       const res = await fetch(`/api/market/quote?symbol=${symbol}${dateParam}`)
       const data = await res.json()
-      if (data?.error || (!data?.close && !data?.price)) {
-        // API failed — keep showing avgBuyPrice (already set as initial state)
-        return
-      }
+      if (data?.error || (!data?.close && !data?.price)) return
       const p = parseFloat(data.close ?? data.price)
       if (p > 0) {
         setPrice(p)
@@ -63,14 +66,13 @@ export function PortfolioRow({
   useEffect(() => {
     setLoading(true)
     fetchPrice()
-    // Historical prices are immutable — no need to poll in sim mode
     if (!simulationDate) {
       const interval = setInterval(fetchPrice, 60_000)
       return () => clearInterval(interval)
     }
   }, [fetchPrice, simulationDate])
 
-  const costBasis   = avgBuyPrice * quantity
+  const costBasis    = avgBuyPrice * quantity
   const currentValue = price !== null ? price * quantity : null
   const pnl          = currentValue !== null ? currentValue - costBasis : null
   const pnlPct       = pnl !== null && costBasis > 0 ? (pnl / costBasis) * 100 : null
@@ -83,14 +85,9 @@ export function PortfolioRow({
 
   return (
     <>
-      <div
-        className={cn(
-          'flex items-center gap-4 px-4 py-3 border-b border-border transition-colors',
-          isFuture ? 'opacity-40' : 'hover:bg-accent/30'
-        )}
-      >
+      <TableRow className={cn(isFuture && 'opacity-40')}>
         {/* Symbol + name */}
-        <div className="w-48 shrink-0">
+        <TableCell>
           <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
             <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
               <SymbolAvatar symbol={symbol} size={32} />
@@ -100,79 +97,97 @@ export function PortfolioRow({
               </div>
             </div>
           </StockDetailSheet>
-        </div>
+        </TableCell>
 
         {/* Current price */}
-        <div className="w-28 shrink-0">
+        <TableCell>
           {loading
-            ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            : <p className="font-semibold text-sm">{price !== null ? `$${fmt(price)}` : '—'}</p>
+            ? <Skeleton className="h-4 w-16" />
+            : <span className="font-semibold text-sm tabular-nums">
+                {price !== null ? `$${fmt(price)}` : '—'}
+              </span>
           }
-        </div>
+        </TableCell>
 
         {/* Units */}
-        <div className="w-24 shrink-0">
-          <p className="text-sm font-medium">{quantity.toFixed(6)}</p>
+        <TableCell>
+          <p className="text-sm font-medium tabular-nums">{quantity.toFixed(6)}</p>
           <p className="text-xs text-muted-foreground">Long</p>
-        </div>
+        </TableCell>
 
-        {/* Avg open */}
-        <div className="w-24 shrink-0">
-          <p className="text-sm">${fmt(avgBuyPrice)}</p>
-        </div>
+        {/* Buy price */}
+        <TableCell>
+          <span className="text-sm tabular-nums">${fmt(avgBuyPrice)}</span>
+        </TableCell>
 
         {/* Trade Date */}
-        <div className="w-28 shrink-0">
-          <p className="text-sm text-muted-foreground">{fmtDate(openedDate)}</p>
-        </div>
+        <TableCell>
+          <span className="text-sm text-muted-foreground tabular-nums">{fmtDate(openedDate)}</span>
+        </TableCell>
 
         {/* P/L */}
-        <div className="w-28 shrink-0">
+        <TableCell>
           {pnl !== null ? (
-            <>
-              <p className={`text-sm font-semibold ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-                {pnlPositive ? '+' : ''}${fmt(pnl)}
-              </p>
-              <p className={`text-xs ${pnlPositive ? 'text-green-500' : 'text-red-500'}`}>
-                ({pnlPositive ? '+' : ''}{pnlPct!.toFixed(2)}%)
-              </p>
-            </>
+            <div className={cn('flex items-center gap-1', pnlPositive ? 'text-green-500' : 'text-red-500')}>
+              {pnlPositive
+                ? <TrendingUp className="h-3 w-3 shrink-0" />
+                : <TrendingDown className="h-3 w-3 shrink-0" />
+              }
+              <div>
+                <p className="text-sm font-semibold tabular-nums">
+                  {pnlPositive ? '+' : ''}${fmt(pnl)}
+                </p>
+                <p className="text-xs tabular-nums">
+                  ({pnlPositive ? '+' : ''}{pnlPct!.toFixed(2)}%)
+                </p>
+              </div>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">—</p>
+            <span className="text-sm text-muted-foreground">—</span>
           )}
-        </div>
+        </TableCell>
 
         {/* Current value */}
-        <div className="flex-1">
-          <p className="text-sm font-medium">
+        <TableCell>
+          <span className="text-sm font-medium tabular-nums">
             {currentValue !== null ? `$${fmt(currentValue)}` : '—'}
-          </p>
-        </div>
+          </span>
+        </TableCell>
 
-        {/* Actions — hidden for future positions */}
-        <div className="flex items-center gap-2 shrink-0 w-36 justify-end">
+        {/* Actions */}
+        <TableCell className="text-right">
           {!isFuture && (
-            <>
-              <Button
-                size="sm"
-                className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
-                disabled={loading}
-                onClick={() => openModal('sell')}
-              >
-                Close
-              </Button>
-              <Button
-                size="sm"
-                className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
-                disabled={loading}
-                onClick={() => openModal('buy')}
-              >
-                Trade
-              </Button>
-            </>
+            <div className="flex items-center justify-end gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
+                    disabled={loading}
+                    onClick={() => openModal('sell')}
+                  >
+                    Close
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sell / close position</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
+                    disabled={loading}
+                    onClick={() => openModal('buy')}
+                  >
+                    Trade
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Buy more of this stock</TooltipContent>
+              </Tooltip>
+            </div>
           )}
-        </div>
-      </div>
+        </TableCell>
+      </TableRow>
 
       {!isFuture && (
         <BuySellModal

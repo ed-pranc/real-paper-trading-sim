@@ -1,9 +1,13 @@
 'use client'
 
 import { useMemo } from 'react'
+import { AreaChart, Area, XAxis, YAxis, ReferenceLine } from 'recharts'
 import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
-} from 'recharts'
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 interface Transaction {
   trade_date: string
@@ -17,15 +21,12 @@ interface PnLChartProps {
 
 export function PnLChart({ transactions }: PnLChartProps) {
   const data = useMemo(() => {
-    // Only sell transactions contribute realised P/L
     const sells = transactions
       .filter(t => t.type === 'sell' && t.pnl != null)
       .sort((a, b) => a.trade_date.localeCompare(b.trade_date))
 
     if (sells.length === 0) return []
 
-    // Prepend a zero baseline one day before the first sell so Recharts
-    // renders a visible line/area even when there is only one data point
     const firstDate = new Date(sells[0].trade_date.slice(0, 10) + 'T00:00:00')
     firstDate.setDate(firstDate.getDate() - 1)
     const baseline = { date: firstDate.toISOString().slice(0, 10), pnl: 0 }
@@ -52,49 +53,56 @@ export function PnLChart({ transactions }: PnLChartProps) {
   const finalPnl = data[data.length - 1]?.pnl ?? 0
   const positive = finalPnl >= 0
   const color = positive ? '#22c55e' : '#ef4444'
+  const gradientId = `pnlGrad-${positive ? 'pos' : 'neg'}`
+
+  const chartConfig = { pnl: { label: 'Cumulative P/L' } } satisfies ChartConfig
 
   return (
-    <div className="h-40">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
-          <defs>
-            <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
-              <stop offset="95%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 10 }}
-            tickLine={false}
-            axisLine={false}
-            interval="preserveStartEnd"
-            tickFormatter={(v: string) => {
-              const d = new Date(v + 'T00:00:00')
-              return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
-            }}
-          />
-          <YAxis hide domain={['auto', 'auto']} />
-          <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-          <Tooltip
-            formatter={(v) => {
-              const n = Number(v)
-              return [`${n >= 0 ? '+' : ''}$${Math.abs(n).toFixed(2)}`, 'Cumulative P/L']
-            }}
-            labelStyle={{ fontSize: 11 }}
-            contentStyle={{ fontSize: 11 }}
-          />
-          <Area
-            type="monotone"
-            dataKey="pnl"
-            stroke={color}
-            strokeWidth={2}
-            fill="url(#pnlGrad)"
-            dot={false}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <ChartContainer config={chartConfig} className="h-40">
+      <AreaChart data={data}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <XAxis
+          dataKey="date"
+          tick={{ fontSize: 10 }}
+          tickLine={false}
+          axisLine={false}
+          interval="preserveStartEnd"
+          tickFormatter={(v: string) => {
+            const d = new Date(v + 'T00:00:00')
+            return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
+          }}
+        />
+        <YAxis hide domain={['auto', 'auto']} />
+        <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(v) => {
+                const n = Number(v)
+                return [`${n >= 0 ? '+' : ''}$${Math.abs(n).toFixed(2)}`, 'Cumulative P/L']
+              }}
+              labelFormatter={(label: string) => {
+                const d = new Date(label + 'T00:00:00')
+                return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
+              }}
+            />
+          }
+        />
+        <Area
+          type="monotone"
+          dataKey="pnl"
+          stroke={color}
+          strokeWidth={2}
+          fill={`url(#${gradientId})`}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    </ChartContainer>
   )
 }

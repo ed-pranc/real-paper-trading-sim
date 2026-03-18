@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { TableCell, TableRow } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Sparkline } from './sparkline'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { removeFromWatchlist } from '@/lib/actions/watchlist'
@@ -34,7 +40,6 @@ export function WatchlistRow({
   const [sparkData, setSparkData] = useState<{ value: number; datetime: string }[]>([])
   const [buyOpen, setBuyOpen] = useState(false)
 
-  // Sparkline fetches independently — it's low-priority and staggered naturally
   const fetchSparkline = useCallback(async () => {
     const endParam = simulationDate ? `&end_date=${simulationDate}` : ''
     try {
@@ -54,7 +59,6 @@ export function WatchlistRow({
 
   useEffect(() => {
     fetchSparkline()
-    // 1Y daily sparkline: bars close once per day — no polling needed
   }, [fetchSparkline])
 
   const price = priceData?.price ?? 0
@@ -71,56 +75,57 @@ export function WatchlistRow({
 
   return (
     <>
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-border hover:bg-accent/20 transition-colors">
-
+      <TableRow>
         {/* Symbol + company */}
-        <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
-          <div className="w-52 shrink-0 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-            <SymbolAvatar symbol={symbol} size={36} />
-            <div className="min-w-0">
-              <p className="font-bold text-sm leading-tight">{symbol}</p>
-              <p className="text-xs text-muted-foreground truncate max-w-[140px]">{companyName}</p>
+        <TableCell>
+          <StockDetailSheet symbol={symbol} companyName={companyName} simulationDate={simulationDate}>
+            <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <SymbolAvatar symbol={symbol} size={36} />
+              <div className="min-w-0">
+                <p className="font-bold text-sm leading-tight">{symbol}</p>
+                <p className="text-xs text-muted-foreground truncate max-w-[140px]">{companyName}</p>
+              </div>
             </div>
-          </div>
-        </StockDetailSheet>
+          </StockDetailSheet>
+        </TableCell>
 
         {/* 1D Change */}
-        <div className="w-28 shrink-0">
+        <TableCell>
           {priceLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : priceData?.is_historical ? (
             <div className="text-muted-foreground">
-              <p className="text-base font-bold leading-tight">${fmt(price)}</p>
+              <p className="text-base font-bold leading-tight tabular-nums">${fmt(price)}</p>
               <p className="text-xs opacity-70">Historical</p>
             </div>
           ) : (
             <div className={changeColor}>
-              <p className="text-base font-bold leading-tight">
+              <p className="text-base font-bold leading-tight tabular-nums">
                 {positive ? '+' : ''}{fmt(change)}
               </p>
-              <p className="text-xs font-medium opacity-80">
+              <p className="text-xs font-medium opacity-80 tabular-nums">
                 {positive ? '+' : ''}{changePct.toFixed(2)}%
               </p>
             </div>
           )}
-        </div>
+        </TableCell>
 
-        {/* 30-day sparkline */}
-        <div className="w-52 shrink-0">
+        {/* 1Y Sparkline */}
+        <TableCell className="w-56">
           {sparkData.length > 0 && <Sparkline data={sparkData} positive={positive} />}
-        </div>
+        </TableCell>
 
-        {/* Buy price */}
-        <div className="w-28 shrink-0">
+        {/* Buy price pill */}
+        <TableCell>
           {!priceLoading && price > 0 && (
-            <div className="bg-green-600/10 border border-green-600/20 rounded-xl px-3 py-1 text-center">
+            <div className="bg-green-600/10 border border-green-600/20 rounded-xl px-3 py-1 text-center w-fit">
               <span className="text-sm font-semibold tabular-nums text-green-500">{fmt(price)}</span>
             </div>
           )}
-        </div>
+        </TableCell>
 
-        {/* 52W Range — hidden in sim mode (historical quote doesn't include 52W data) */}
-        <div className="flex-1 min-w-0">
+        {/* 52W Range */}
+        <TableCell className="min-w-[160px]">
           {!priceLoading && week52High > 0 && (
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -135,28 +140,40 @@ export function WatchlistRow({
               </div>
             </div>
           )}
-        </div>
+        </TableCell>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            size="sm"
-            className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-5 font-semibold"
-            disabled={priceLoading || price === 0}
-            onClick={() => setBuyOpen(true)}
-          >
-            Buy
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-5 font-semibold"
+                  disabled={priceLoading || price === 0}
+                  onClick={() => setBuyOpen(true)}
+                >
+                  Buy
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Buy {symbol}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={async () => { await removeFromWatchlist(symbol); router.refresh() }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Remove from watchlist</TooltipContent>
+            </Tooltip>
+          </div>
+        </TableCell>
+      </TableRow>
 
       <BuySellModal
         open={buyOpen}

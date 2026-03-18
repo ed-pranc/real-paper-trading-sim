@@ -56,6 +56,7 @@ export function SimulationDateSelector() {
               captionLayout="dropdown"
               startMonth={new Date(2000, 0)}
               endMonth={today}
+              defaultMonth={selectedDate}
               initialFocus
             />
           </PopoverContent>

@@ -1,7 +1,13 @@
 'use client'
 
 import { useMemo } from 'react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 interface Transaction {
   type: 'buy' | 'sell'
@@ -11,6 +17,11 @@ interface Transaction {
 interface WinRateRingProps {
   transactions: Transaction[]
 }
+
+const chartConfig = {
+  Wins: { label: 'Wins', color: '#22c55e' },
+  Losses: { label: 'Losses', color: '#ef4444' },
+} satisfies ChartConfig
 
 export function WinRateRing({ transactions: txs }: WinRateRingProps) {
   const { wins, losses, winPct } = useMemo(() => {
@@ -40,7 +51,7 @@ export function WinRateRing({ transactions: txs }: WinRateRingProps) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 h-full">
       <div className="relative w-24 h-24">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="h-24 aspect-square">
           <PieChart>
             <Pie
               data={data}
@@ -57,12 +68,16 @@ export function WinRateRing({ transactions: txs }: WinRateRingProps) {
               <Cell fill="#22c55e" />
               <Cell fill="#ef4444" />
             </Pie>
-            <Tooltip
-              formatter={(v, name) => [v, name]}
-              contentStyle={{ fontSize: 11, borderRadius: 8 }}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(v, name) => [String(v), String(name)]}
+                  hideLabel
+                />
+              }
             />
           </PieChart>
-        </ResponsiveContainer>
+        </ChartContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-base font-bold">{winPct}%</span>
         </div>

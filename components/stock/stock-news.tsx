@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ExternalLinkIcon } from 'lucide-react'
 
 interface NewsArticle {
@@ -52,17 +54,17 @@ export function StockNews({ symbol, simulationDate }: { symbol: string; simulati
       {loading ? (
         <div className="px-4 space-y-3 py-2">
           {[1, 2, 3].map(i => (
-            <div key={i} className="space-y-1.5 animate-pulse">
-              <div className="h-3 bg-muted rounded w-1/4" />
-              <div className="h-4 bg-muted rounded w-full" />
-              <div className="h-3 bg-muted rounded w-3/4" />
+            <div key={i} className="space-y-1.5">
+              <Skeleton className="h-3 w-1/4" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-3/4" />
             </div>
           ))}
         </div>
       ) : articles.length === 0 ? (
         <p className="px-4 text-sm text-muted-foreground py-2">No recent news found.</p>
       ) : (
-        <div>
+        <ScrollArea className="max-h-64">
           {articles.map((a, i) => (
             <div key={i}>
               <a
@@ -83,7 +85,7 @@ export function StockNews({ symbol, simulationDate }: { symbol: string; simulati
               {i < articles.length - 1 && <Separator className="mx-4" />}
             </div>
           ))}
-        </div>
+        </ScrollArea>
       )}
     </div>
   )

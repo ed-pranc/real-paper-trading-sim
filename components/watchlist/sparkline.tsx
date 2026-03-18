@@ -1,26 +1,16 @@
 'use client'
 
-import { AreaChart, Area, YAxis, ResponsiveContainer, Tooltip } from 'recharts'
-import type { TooltipProps } from 'recharts'
+import { AreaChart, Area, YAxis } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 interface SparklineProps {
   data: { value: number; datetime: string }[]
   positive: boolean
-}
-
-function SparkTooltip({ active, payload }: TooltipProps<number, string> & { payload?: { payload: { value: number; datetime: string } }[] }) {
-  if (!active || !payload?.length) return null
-  const point = payload[0].payload
-  const price = `$${point.value.toFixed(2)}`
-  // Append T00:00:00 to parse as local time and avoid UTC timezone shift (e.g. Mar 11 → Mar 10)
-  const d = new Date(point.datetime + 'T00:00:00')
-  const dateLabel = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-  return (
-    <div className="bg-popover border border-border rounded px-2 py-1 shadow-md pointer-events-none">
-      <p className="text-[10px] font-semibold tabular-nums">{price}</p>
-      <p className="text-[9px] text-muted-foreground">{dateLabel}</p>
-    </div>
-  )
 }
 
 export function Sparkline({ data, positive }: SparklineProps) {
@@ -34,6 +24,8 @@ export function Sparkline({ data, positive }: SparklineProps) {
   const pad = (max - min) * 0.05 || min * 0.01
   const domain: [number, number] = [min - pad, max + pad]
 
+  const chartConfig = { value: { label: 'Price' } } satisfies ChartConfig
+
   return (
     <div className="flex items-center gap-1 w-full h-10">
       {/* Start price label */}
@@ -42,33 +34,41 @@ export function Sparkline({ data, positive }: SparklineProps) {
       </span>
 
       {/* Chart */}
-      <div className="flex-1 h-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <YAxis hide domain={domain} />
-            <Tooltip
-              content={<SparkTooltip />}
-              cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '3 3' }}
-              isAnimationActive={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={1.5}
-              fill={`url(#${gradientId})`}
-              dot={false}
-              isAnimationActive={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+      <ChartContainer config={chartConfig} className="flex-1 h-10">
+        <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.25} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <YAxis hide domain={domain} />
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Price']}
+                labelFormatter={(_, payload) => {
+                  const datetime = payload?.[0]?.payload?.datetime as string | undefined
+                  if (!datetime) return ''
+                  const d = new Date(datetime + 'T00:00:00')
+                  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                }}
+              />
+            }
+            cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '3 3' }}
+            isAnimationActive={false}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke={color}
+            strokeWidth={1.5}
+            fill={`url(#${gradientId})`}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ChartContainer>
 
       {/* End price label */}
       <span className="text-[9px] tabular-nums text-muted-foreground shrink-0 leading-none w-12 text-left">

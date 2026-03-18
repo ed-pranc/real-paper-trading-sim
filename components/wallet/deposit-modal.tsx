@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { depositFunds } from '@/lib/actions/wallet'
 import { useWallet } from '@/context/wallet'
 
@@ -41,18 +42,22 @@ export function DepositModal({ open, onClose }: DepositModalProps) {
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <Input
-              type="number"
-              min="1"
-              placeholder="10,000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="pl-7 text-lg"
-              onKeyDown={(e) => e.key === 'Enter' && handleDeposit()}
-              autoFocus
-            />
+          <div className="space-y-1.5">
+            <Label htmlFor="deposit-amount">Amount (USD)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+              <Input
+                id="deposit-amount"
+                type="number"
+                min="1"
+                placeholder="10,000"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="pl-7 text-lg"
+                onKeyDown={(e) => e.key === 'Enter' && handleDeposit()}
+                autoFocus
+              />
+            </div>
           </div>
 
           {/* Quick amount buttons */}

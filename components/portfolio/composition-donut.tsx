@@ -1,6 +1,12 @@
 'use client'
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import { PieChart, Pie, Cell } from 'recharts'
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart'
 
 interface Position {
   symbol: string
@@ -32,10 +38,14 @@ export function CompositionDonut({ positions }: CompositionDonutProps) {
 
   if (data.length === 0) return null
 
+  const chartConfig = Object.fromEntries(
+    data.map((d, i) => [d.name, { label: d.name, color: PALETTE[i % PALETTE.length] }])
+  ) satisfies ChartConfig
+
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative w-44 h-44">
-        <ResponsiveContainer width="100%" height="100%">
+        <ChartContainer config={chartConfig} className="h-44 aspect-square">
           <PieChart>
             <Pie
               data={data}
@@ -53,12 +63,16 @@ export function CompositionDonut({ positions }: CompositionDonutProps) {
                 <Cell key={entry.name} fill={PALETTE[i % PALETTE.length]} />
               ))}
             </Pie>
-            <Tooltip
-              formatter={(v, name) => [fmt(Number(v)), name]}
-              contentStyle={{ fontSize: 11, borderRadius: 8 }}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(v, name) => [fmt(Number(v)), String(name)]}
+                  hideLabel
+                />
+              }
             />
           </PieChart>
-        </ResponsiveContainer>
+        </ChartContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span className="text-xs text-muted-foreground">Cost Basis</span>
           <span className="text-sm font-bold">{fmt(total)}</span>
