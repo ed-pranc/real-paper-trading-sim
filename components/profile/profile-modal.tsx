@@ -46,14 +46,14 @@ export function ProfileModal({
         onPointerDownOutside={locked ? (e) => e.preventDefault() : undefined}
         onEscapeKeyDown={locked ? (e) => e.preventDefault() : undefined}
       >
-        {locked && (
-          <DialogHeader>
-            <DialogTitle>Complete your profile</DialogTitle>
+        <DialogHeader className={locked ? undefined : 'sr-only'}>
+          <DialogTitle>{locked ? 'Complete your profile' : 'Edit profile'}</DialogTitle>
+          {locked && (
             <DialogDescription>
               Please set a nickname to personalise your experience before continuing.
             </DialogDescription>
-          </DialogHeader>
-        )}
+          )}
+        </DialogHeader>
         <ProfileForm
           profile={profile}
           email={email}

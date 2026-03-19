@@ -33,7 +33,7 @@ export default async function HomePage() {
       .eq('user_id', user.id)
       .not('simulation_date', 'is', null),
     supabase
-      .from('wallet_transactions')
+      .from('wallet_deposits')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('type', 'deposit'),

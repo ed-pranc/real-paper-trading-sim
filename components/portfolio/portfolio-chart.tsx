@@ -129,7 +129,7 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
         </div>
       ) : chartData.length > 1 ? (
         <ChartContainer config={chartConfig} className="h-48">
-          <AreaChart data={chartData}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={color} stopOpacity={0.3} />
@@ -144,7 +144,7 @@ export function PortfolioChart({ symbols, simulationDate }: PortfolioChartProps)
               interval="preserveStartEnd"
               tickFormatter={(v) => formatTick(v, isIntraday)}
             />
-            <YAxis hide domain={['auto', 'auto']} />
+            <YAxis hide width={0} domain={[(dataMin: number) => dataMin * 0.95, 'auto']} />
             <ChartTooltip
               content={
                 <ChartTooltipContent

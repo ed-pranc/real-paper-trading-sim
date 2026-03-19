@@ -59,7 +59,7 @@ export function PnLChart({ transactions }: PnLChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="h-40">
-      <AreaChart data={data}>
+      <AreaChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
@@ -77,7 +77,7 @@ export function PnLChart({ transactions }: PnLChartProps) {
             return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })
           }}
         />
-        <YAxis hide domain={['auto', 'auto']} />
+        <YAxis hide width={0} domain={['auto', 'auto']} />
         <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
         <ChartTooltip
           content={

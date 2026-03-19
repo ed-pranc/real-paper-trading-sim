@@ -56,7 +56,7 @@ export function TradesInvestedChart({ transactions }: TradesInvestedChartProps) 
 
   return (
     <ChartContainer config={chartConfig} className="h-40">
-      <AreaChart data={data}>
+      <AreaChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="investedGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.25} />
@@ -74,7 +74,7 @@ export function TradesInvestedChart({ transactions }: TradesInvestedChartProps) 
             return d.toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' })
           }}
         />
-        <YAxis hide domain={[0, 'auto']} />
+        <YAxis hide width={0} domain={[0, 'auto']} />
         <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
         <ChartTooltip
           content={
