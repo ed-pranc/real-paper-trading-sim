@@ -9,40 +9,39 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart'
 
-interface Transaction {
+interface WalletTransaction {
   type: string
-  trade_date: string
-  simulation_date: string | null
+  created_at: string
 }
 
-interface TradesPerYearChartProps {
-  transactions: Transaction[]
+interface DepositsPerYearChartProps {
+  transactions: WalletTransaction[]
 }
 
 const chartConfig = {
-  buys:  { label: 'Buys',  color: '#22c55e' },
-  sells: { label: 'Sells', color: '#ef4444' },
+  deposits:    { label: 'Deposits',    color: '#22c55e' },
+  withdrawals: { label: 'Withdrawals', color: '#ef4444' },
 } satisfies ChartConfig
 
-export function TradesPerYearChart({ transactions }: TradesPerYearChartProps) {
+export function DepositsPerYearChart({ transactions }: DepositsPerYearChartProps) {
   const data = useMemo(() => {
-    const map = new Map<string, { buys: number; sells: number }>()
+    const map = new Map<string, { deposits: number; withdrawals: number }>()
     transactions.forEach(t => {
-      const year = (t.simulation_date ?? t.trade_date.slice(0, 10)).slice(0, 4)
-      const entry = map.get(year) ?? { buys: 0, sells: 0 }
-      if (t.type === 'buy') entry.buys += 1
-      else entry.sells += 1
+      const year = t.created_at.slice(0, 4)
+      const entry = map.get(year) ?? { deposits: 0, withdrawals: 0 }
+      if (t.type === 'deposit') entry.deposits += 1
+      else entry.withdrawals += 1
       map.set(year, entry)
     })
     return Array.from(map.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([year, { buys, sells }]) => ({ year, buys, sells }))
+      .map(([year, { deposits, withdrawals }]) => ({ year, deposits, withdrawals }))
   }, [transactions])
 
   if (data.length === 0) {
     return (
       <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">
-        No trades yet
+        No transactions yet
       </div>
     )
   }
@@ -58,8 +57,8 @@ export function TradesPerYearChart({ transactions }: TradesPerYearChartProps) {
         />
         <YAxis hide domain={[0, 'auto']} />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="buys"  fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-        <Bar dataKey="sells" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        <Bar dataKey="deposits"    fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        <Bar dataKey="withdrawals" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
       </BarChart>
     </ChartContainer>
   )

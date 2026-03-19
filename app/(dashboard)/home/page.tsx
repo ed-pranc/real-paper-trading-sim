@@ -12,6 +12,7 @@ export default async function HomePage() {
     { count: watchlistCount },
     { count: tradeCount },
     { count: simTradeCount },
+    { count: depositCount },
   ] = await Promise.all([
     supabase
       .from('user_profile')
@@ -31,6 +32,11 @@ export default async function HomePage() {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .not('simulation_date', 'is', null),
+    supabase
+      .from('wallet_transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('type', 'deposit'),
   ])
 
   const nickname = profile?.nickname ?? user.email?.split('@')[0] ?? 'Trader'
@@ -38,7 +44,7 @@ export default async function HomePage() {
   return (
     <HomeClient
       nickname={nickname}
-      profileComplete={!!(profile?.nickname && profile.nickname.trim() !== '')}
+      hasDeposit={(depositCount ?? 0) > 0}
       watchlistCount={watchlistCount ?? 0}
       tradeCount={tradeCount ?? 0}
       simulationUsed={(simTradeCount ?? 0) > 0}

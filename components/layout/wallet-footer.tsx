@@ -1,9 +1,7 @@
 'use client'
 
 import { useWallet } from '@/context/wallet'
-import { useSimulationDate } from '@/context/simulation-date'
 import { LABELS } from '@/lib/labels'
-import { Badge } from '@/components/ui/badge'
 import { TriangleAlert } from 'lucide-react'
 
 function fmt(n: number) {
@@ -12,10 +10,8 @@ function fmt(n: number) {
 
 export function WalletFooter() {
   const { summary } = useWallet()
-  const { simulationDate, setSimulationDate } = useSimulationDate()
   const { cash, invested, pnl, realisedPnl, total, pricesOk } = summary
 
-  const isSim = simulationDate !== null
   const pnlClass = pnl >= 0 ? 'text-green-500' : 'text-red-500'
   const realisedClass = realisedPnl >= 0 ? 'text-green-500' : 'text-red-500'
 
@@ -54,14 +50,6 @@ export function WalletFooter() {
         <div className="flex flex-col items-center justify-center py-3 px-4">
           <span className="text-xl font-bold tabular-nums tracking-tight text-primary">{fmt(total)}</span>
           <span className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{LABELS.totalValue}</span>
-          {isSim && (
-            <Badge
-              onClick={() => setSimulationDate(null)}
-              className="bg-green-600 text-white hover:bg-green-700 cursor-pointer mt-1"
-            >
-              GO LIVE
-            </Badge>
-          )}
         </div>
 
       </div>

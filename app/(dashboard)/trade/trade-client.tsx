@@ -239,7 +239,6 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
         symbol={symbol}
         companyName={companyName}
         price={price}
-        mode={modalMode}
       />
     </div>
   )

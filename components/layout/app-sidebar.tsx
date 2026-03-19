@@ -2,19 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Wallet, Eye, BarChart2, History, User, LogOut } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Home, Wallet, Eye, BarChart2, History } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { signOut } from '@/lib/actions/auth'
 
 const navItems = [
   { href: '/home',      label: 'Quick Start', icon: Home },
@@ -22,15 +19,9 @@ const navItems = [
   { href: '/watchlist', label: 'Watchlist', icon: Eye },
   { href: '/portfolio', label: 'Portfolio', icon: BarChart2 },
   { href: '/history',   label: 'History',   icon: History },
-  { href: '/profile',   label: 'Profile',   icon: User },
 ]
 
-interface AppSidebarProps {
-  nickname?: string
-  avatarUrl?: string
-}
-
-export function AppSidebar({ nickname = 'Trader', avatarUrl }: AppSidebarProps) {
+export function AppSidebar() {
   const pathname = usePathname()
 
   return (
@@ -75,38 +66,6 @@ export function AppSidebar({ nickname = 'Trader', avatarUrl }: AppSidebarProps) 
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-
-      {/* User */}
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild tooltip={nickname}>
-              <Link href="/profile">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={avatarUrl} />
-                  <AvatarFallback className="rounded-lg">
-                    {nickname[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{nickname}</span>
-                  <span className="truncate text-xs text-muted-foreground">View profile</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <form action={signOut} className="w-full">
-              <SidebarMenuButton asChild tooltip="Sign out">
-                <button type="submit" className="w-full">
-                  <LogOut />
-                  <span>Sign out</span>
-                </button>
-              </SidebarMenuButton>
-            </form>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { TableCell, TableRow } from '@/components/ui/table'
@@ -9,13 +9,25 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BuySellModal } from '@/components/trade/buy-sell-modal'
 import { useSimulationDate } from '@/context/simulation-date'
-import { TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
 import { cn, fmtDate } from '@/lib/utils'
+import { executeSell } from '@/lib/actions/trade'
 
 interface PortfolioRowProps {
   symbol: string
@@ -45,7 +57,7 @@ export function PortfolioRow({
   const [price, setPrice] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [modalMode, setModalMode] = useState<'buy' | 'sell'>('buy')
+  const [isClosing, startClose] = useTransition()
 
   const fetchPrice = useCallback(async () => {
     try {
@@ -78,9 +90,12 @@ export function PortfolioRow({
   const pnlPct       = pnl !== null && costBasis > 0 ? (pnl / costBasis) * 100 : null
   const pnlPositive  = pnl !== null ? pnl >= 0 : true
 
-  function openModal(mode: 'buy' | 'sell') {
-    setModalMode(mode)
-    setModalOpen(true)
+  function handleClose() {
+    if (!price) return
+    startClose(async () => {
+      await executeSell(symbol, companyName, quantity, price, simulationDate)
+      router.refresh()
+    })
   }
 
   return (
@@ -158,31 +173,59 @@ export function PortfolioRow({
         <TableCell className="text-right">
           {!isFuture && (
             <div className="flex items-center justify-end gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
-                    disabled={loading}
-                    onClick={() => openModal('sell')}
-                  >
-                    Close
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sell / close position</TooltipContent>
-              </Tooltip>
+              {/* Close — sell all with confirmation */}
+              <AlertDialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="rounded-full bg-red-600 hover:bg-red-700 text-white h-8 px-4"
+                        disabled={loading || isClosing}
+                      >
+                        {isClosing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Close'}
+                      </Button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Sell entire position</TooltipContent>
+                </Tooltip>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Close {symbol} position?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will sell all {quantity.toFixed(6)} shares at ${price !== null ? fmt(price) : '—'} per share
+                      {price !== null && ` (≈ $${fmt(price * quantity)})`}.
+                      This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        onClick={handleClose}
+                        disabled={isClosing || price === null}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        Yes, sell all
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Trade — buy/partial sell modal */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     size="sm"
                     className="rounded-full bg-green-600 hover:bg-green-700 text-white h-8 px-4"
                     disabled={loading}
-                    onClick={() => openModal('buy')}
+                    onClick={() => setModalOpen(true)}
                   >
                     Trade
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Buy more of this stock</TooltipContent>
+                <TooltipContent>Buy more or partial sell</TooltipContent>
               </Tooltip>
             </div>
           )}
@@ -196,7 +239,6 @@ export function PortfolioRow({
           symbol={symbol}
           companyName={companyName}
           price={price ?? avgBuyPrice}
-          mode={modalMode}
           maxShares={quantity}
         />
       )}

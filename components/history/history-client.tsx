@@ -126,13 +126,13 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         </Card>
         <Card>
           <CardContent className="pt-5 pb-5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Bought</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Opened Trades</p>
             <p className="text-2xl font-bold mt-1">{fmt(totalIn)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 pb-5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Sold</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Closed Trades</p>
             <p className="text-2xl font-bold mt-1">{fmt(totalOut)}</p>
           </CardContent>
         </Card>
