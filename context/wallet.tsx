@@ -36,99 +36,74 @@ export function WalletProvider({ children, userId }: { children: React.ReactNode
   const refresh = useCallback(async () => {
     const supabase = createClient()
 
-    // In sim mode: replay transactions for positions + reconstruct cash from sim-tagged history.
-    // In live mode: read directly from positions table and wallet_balance.
-    const [walletRes, positionsRes, realisedRes, depositsRes] = await Promise.all([
-      supabase.from('wallet_balance').select('cash_balance, updated_at').eq('user_id', userId).single(),
-      simulationDate
-        ? supabase
-            .from('transactions')
-            .select('symbol, type, quantity, price, total, simulation_date, trade_date')
-            .eq('user_id', userId)
-        : supabase.from('positions').select('symbol, quantity, avg_buy_price').eq('user_id', userId),
-      simulationDate
-        ? supabase
-            .from('transactions')
-            .select('pnl')
-            .eq('user_id', userId)
-            .eq('type', 'sell')
-            .not('pnl', 'is', null)
-            .lte('simulation_date', simulationDate)
-        : supabase
-            .from('transactions')
-            .select('pnl')
-            .eq('user_id', userId)
-            .eq('type', 'sell')
-            .not('pnl', 'is', null),
-      simulationDate
-        ? supabase
-            .from('wallet_deposits')
-            .select('type, amount')
-            .eq('user_id', userId)
-            .not('simulation_date', 'is', null)
-            .lte('simulation_date', simulationDate)
-        : Promise.resolve(null),
+    // Unified model: both LIVE and SIM use transaction replay.
+    // effectiveDate = simulationDate (SIM) or today (LIVE).
+    // effDate(tx) = tx.simulation_date ?? tx.trade_date.slice(0, 10)
+    const today = new Date().toISOString().slice(0, 10)
+    const effectiveDate = simulationDate ?? today
+
+    const [walletRes, txRes, depositsRes] = await Promise.all([
+      supabase.from('wallet_balance').select('updated_at').eq('user_id', userId).single(),
+      supabase
+        .from('transactions')
+        .select('symbol, type, quantity, price, total, pnl, simulation_date, trade_date')
+        .eq('user_id', userId),
+      supabase
+        .from('wallet_deposits')
+        .select('type, amount')
+        .eq('user_id', userId)
+        .lte('created_at', `${effectiveDate}T23:59:59.999Z`),
     ])
 
-    // In sim mode, reconstruct cash from sim-tagged deposits/withdrawals + trade totals up to simDate.
-    // In live mode, use the live wallet balance directly.
-    let cash: number
-    if (simulationDate) {
-      const depositCash = (depositsRes?.data ?? []).reduce(
-        (sum, d) => sum + (d.type === 'deposit' ? Number(d.amount) : -Number(d.amount)),
-        0
-      )
-      type TxWithTotal = { type: string; total: number; simulation_date: string | null }
-      const tradeCash = ((positionsRes.data ?? []) as TxWithTotal[]).reduce((sum, tx) => {
-        if (!tx.simulation_date || tx.simulation_date > simulationDate) return sum
-        return sum + (tx.type === 'sell' ? Number(tx.total) : -Number(tx.total))
-      }, 0)
-      cash = depositCash + tradeCash
-    } else {
-      cash = Number(walletRes.data?.cash_balance ?? 0)
-    }
+    type TxRow = { symbol: string; type: string; quantity: number; price: number; total: number; pnl: number | null; simulation_date: string | null; trade_date: string }
+    const allTx = (txRes.data ?? []) as TxRow[]
+    function effDate(tx: TxRow) { return tx.simulation_date ?? tx.trade_date.slice(0, 10) }
 
-    // Derive effective positions from transaction replay in sim mode
-    let positions: { symbol: string; quantity: number; avg_buy_price: number }[]
-    if (simulationDate) {
-      type TxRow = { symbol: string; type: string; quantity: number; price: number; simulation_date: string | null; trade_date: string }
-      const txs = (positionsRes.data ?? []) as TxRow[]
-      const sorted = [...txs].sort((a, b) => {
-        const da = a.simulation_date ?? a.trade_date.slice(0, 10)
-        const db = b.simulation_date ?? b.trade_date.slice(0, 10)
-        return da.localeCompare(db)
-      })
-      const bySymbol: Record<string, { qty: number; totalCost: number }> = {}
-      for (const tx of sorted) {
-        const effDate = tx.simulation_date ?? tx.trade_date.slice(0, 10)
-        if (effDate > simulationDate) continue
-        if (!bySymbol[tx.symbol]) bySymbol[tx.symbol] = { qty: 0, totalCost: 0 }
-        const s = bySymbol[tx.symbol]
-        const qty = Number(tx.quantity)
-        const price = Number(tx.price)
-        if (tx.type === 'buy') {
-          s.qty += qty
-          s.totalCost += qty * price
-        } else {
-          const avgPrice = s.qty > 0 ? s.totalCost / s.qty : 0
-          s.qty -= qty
-          s.totalCost -= qty * avgPrice
-          if (s.qty < 0) s.qty = 0
-          if (s.totalCost < 0) s.totalCost = 0
-        }
+    // Cash = deposits/withdrawals up to effectiveDate + sell proceeds - buy costs up to effectiveDate
+    const depositCash = (depositsRes.data ?? []).reduce(
+      (sum, d) => sum + (d.type === 'deposit' ? Number(d.amount) : -Number(d.amount)),
+      0
+    )
+    const tradeCash = allTx.reduce((sum, tx) => {
+      if (effDate(tx) > effectiveDate) return sum
+      return sum + (tx.type === 'sell' ? Number(tx.total) : -Number(tx.total))
+    }, 0)
+    const cash = depositCash + tradeCash
+
+    // Positions: replay all transactions up to effectiveDate
+    const sorted = [...allTx].sort((a, b) => effDate(a).localeCompare(effDate(b)))
+    const bySymbol: Record<string, { qty: number; totalCost: number }> = {}
+    for (const tx of sorted) {
+      if (effDate(tx) > effectiveDate) continue
+      if (!bySymbol[tx.symbol]) bySymbol[tx.symbol] = { qty: 0, totalCost: 0 }
+      const s = bySymbol[tx.symbol]
+      const qty = Number(tx.quantity)
+      const price = Number(tx.price)
+      if (tx.type === 'buy') {
+        s.qty += qty
+        s.totalCost += qty * price
+      } else {
+        const avgPrice = s.qty > 0 ? s.totalCost / s.qty : 0
+        s.qty -= qty
+        s.totalCost -= qty * avgPrice
+        if (s.qty < 0) s.qty = 0
+        if (s.totalCost < 0) s.totalCost = 0
       }
-      positions = Object.entries(bySymbol)
-        .filter(([, s]) => s.qty > 0.000001)
-        .map(([symbol, s]) => ({
-          symbol,
-          quantity: s.qty,
-          avg_buy_price: s.qty > 0 ? s.totalCost / s.qty : 0,
-        }))
-    } else {
-      positions = (positionsRes.data ?? []) as { symbol: string; quantity: number; avg_buy_price: number }[]
     }
+    const positions = Object.entries(bySymbol)
+      .filter(([, s]) => s.qty > 0.000001)
+      .map(([symbol, s]) => ({
+        symbol,
+        quantity: s.qty,
+        avg_buy_price: s.qty > 0 ? s.totalCost / s.qty : 0,
+      }))
 
-    const realisedPnl = (realisedRes.data ?? []).reduce((sum, t) => sum + Number(t.pnl), 0)
+    // Realised P/L: closed sell transactions up to effectiveDate
+    const realisedPnl = allTx.reduce((sum, tx) => {
+      if (tx.type !== 'sell' || tx.pnl == null) return sum
+      if (effDate(tx) > effectiveDate) return sum
+      return sum + Number(tx.pnl)
+    }, 0)
 
     const invested = positions.reduce(
       (sum, p) => sum + Number(p.quantity) * Number(p.avg_buy_price),

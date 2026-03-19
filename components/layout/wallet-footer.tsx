@@ -19,7 +19,7 @@ export function WalletFooter() {
   const pnlClass = pnl >= 0 ? 'text-green-500' : 'text-red-500'
   const realisedClass = realisedPnl >= 0 ? 'text-green-500' : 'text-red-500'
 
-  const colClass = isSim ? 'grid-cols-5' : 'grid-cols-4'
+  const colClass = 'grid-cols-5'
 
   return (
     <footer className="shrink-0 border-t border-border bg-card">
@@ -46,12 +46,10 @@ export function WalletFooter() {
           )}
         </div>
 
-        {isSim && (
-          <div className="flex flex-col items-center justify-center py-3 px-4 border-r border-border">
-            <span className={`text-xl font-bold tabular-nums tracking-tight ${realisedClass}`}>{fmt(realisedPnl)}</span>
-            <span className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{LABELS.realisedPnl}</span>
-          </div>
-        )}
+        <div className="flex flex-col items-center justify-center py-3 px-4 border-r border-border">
+          <span className={`text-xl font-bold tabular-nums tracking-tight ${realisedClass}`}>{fmt(realisedPnl)}</span>
+          <span className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{LABELS.realisedPnl}</span>
+        </div>
 
         <div className="flex flex-col items-center justify-center py-3 px-4">
           <span className="text-xl font-bold tabular-nums tracking-tight text-primary">{fmt(total)}</span>

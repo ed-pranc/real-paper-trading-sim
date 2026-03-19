@@ -11,14 +11,6 @@ import { useWallet } from '@/context/wallet'
 import { BarChart2 } from 'lucide-react'
 import { LABELS } from '@/lib/labels'
 
-interface Position {
-  symbol: string
-  company_name: string
-  quantity: number
-  avg_buy_price: number
-  opened_at: string
-}
-
 interface Snapshot {
   snapshot_date: string
   total_value: number
@@ -50,79 +42,71 @@ function fmt(n: number) {
 }
 
 /** Returns the "effective date" of a transaction for ordering/filtering purposes. */
-function effectiveDate(tx: Transaction): string {
+function effDate(tx: Transaction): string {
   return tx.simulation_date ?? tx.trade_date.slice(0, 10)
 }
 
 /**
  * Replays all transactions to compute effective positions.
- * - In sim mode (simDate set): replays only transactions with effectiveDate ≤ simDate.
- *   Symbols whose first buy is after simDate are marked is_future = true (shown greyed).
- * - In live mode: passes through positions as-is, enriched with opened_date from transactions.
+ * Both LIVE and SIM modes use transaction replay with effectiveDateCutoff = simDate ?? today.
+ * In SIM mode, symbols whose first buy is after simDate are marked is_future = true (shown greyed).
  */
 function computeEffectivePositions(
   transactions: Transaction[],
-  positions: Position[],
   simDate: string | null
 ): EffectivePosition[] {
-  // Sort all transactions by effective date ascending
-  const sorted = [...transactions].sort((a, b) =>
-    effectiveDate(a).localeCompare(effectiveDate(b))
-  )
+  const today = new Date().toISOString().slice(0, 10)
+  const cutoff = simDate ?? today
 
-  // Build a map of symbol → first buy effective date (across ALL transactions)
-  const firstBuyDate: Record<string, string> = {}
+  const sorted = [...transactions].sort((a, b) => effDate(a).localeCompare(effDate(b)))
+
+  // Collect all symbols and their first buy date
+  const symbolMeta: Record<string, { company_name: string; firstBuyDate: string }> = {}
   for (const tx of sorted) {
-    if (tx.type === 'buy' && !(tx.symbol in firstBuyDate)) {
-      firstBuyDate[tx.symbol] = effectiveDate(tx)
+    if (tx.type === 'buy' && !(tx.symbol in symbolMeta)) {
+      symbolMeta[tx.symbol] = { company_name: tx.company_name, firstBuyDate: effDate(tx) }
     }
   }
 
   const result: EffectivePosition[] = []
 
-  for (const pos of positions) {
-    const symbol = pos.symbol
-    const firstDate = firstBuyDate[symbol]
+  for (const [symbol, meta] of Object.entries(symbolMeta)) {
+    const firstDate = meta.firstBuyDate
 
-    if (!simDate) {
-      // Live mode: use DB position as-is, enrich with opened_date
+    if (simDate && firstDate > simDate) {
+      // All buys are in the future relative to sim date — grey out using full quantities
+      const allTxs = sorted.filter(tx => tx.symbol === symbol)
+      let qty = 0, totalCost = 0
+      for (const tx of allTxs) {
+        if (tx.type === 'buy') {
+          qty += Number(tx.quantity); totalCost += Number(tx.quantity) * Number(tx.price)
+        } else {
+          const avg = qty > 0 ? totalCost / qty : 0
+          qty -= Number(tx.quantity); totalCost -= Number(tx.quantity) * avg
+          if (qty < 0) qty = 0
+          if (totalCost < 0) totalCost = 0
+        }
+      }
+      if (qty <= 0.000001) continue
       result.push({
         symbol,
-        company_name: pos.company_name,
-        quantity: Number(pos.quantity),
-        avg_buy_price: Number(pos.avg_buy_price),
-        opened_date: firstDate ?? pos.opened_at.slice(0, 10),
-        is_future: false,
-      })
-      continue
-    }
-
-    // Sim mode
-    if (!firstDate || firstDate > simDate) {
-      // All buys are in the future relative to sim date → grey out with full current values
-      result.push({
-        symbol,
-        company_name: pos.company_name,
-        quantity: Number(pos.quantity),
-        avg_buy_price: Number(pos.avg_buy_price),
-        opened_date: firstDate ?? pos.opened_at.slice(0, 10),
+        company_name: meta.company_name,
+        quantity: qty,
+        avg_buy_price: qty > 0 ? totalCost / qty : 0,
+        opened_date: firstDate,
         is_future: true,
       })
       continue
     }
 
-    // Replay transactions for this symbol up to and including simDate
-    const symbolTxs = sorted.filter(tx => tx.symbol === symbol && effectiveDate(tx) <= simDate)
-    let qty = 0
-    let totalCost = 0
-    let openedDate = firstDate
-
+    // Replay transactions for this symbol up to cutoff
+    const symbolTxs = sorted.filter(tx => tx.symbol === symbol && effDate(tx) <= cutoff)
+    let qty = 0, totalCost = 0
     for (const tx of symbolTxs) {
       if (tx.type === 'buy') {
         totalCost += Number(tx.quantity) * Number(tx.price)
         qty += Number(tx.quantity)
       } else {
-        // sell: qty decreases, avg price unchanged, cost basis adjusts proportionally
         const avgPrice = qty > 0 ? totalCost / qty : 0
         qty -= Number(tx.quantity)
         totalCost -= Number(tx.quantity) * avgPrice
@@ -131,14 +115,14 @@ function computeEffectivePositions(
       }
     }
 
-    if (qty <= 0.000001) continue // position was fully closed as of sim date
+    if (qty <= 0.000001) continue
 
     result.push({
       symbol,
-      company_name: pos.company_name,
+      company_name: meta.company_name,
       quantity: qty,
       avg_buy_price: qty > 0 ? totalCost / qty : 0,
-      opened_date: openedDate,
+      opened_date: firstDate,
       is_future: false,
     })
   }
@@ -147,11 +131,9 @@ function computeEffectivePositions(
 }
 
 export function PortfolioClient({
-  positions,
   snapshots,
   transactions,
 }: {
-  positions: Position[]
   snapshots: Snapshot[]
   transactions: Transaction[]
 }) {
@@ -164,7 +146,7 @@ export function PortfolioClient({
     setPriceMap(prev => prev[symbol] === price ? prev : { ...prev, [symbol]: price })
   }, [])
 
-  const effectivePositions = computeEffectivePositions(transactions, positions, simulationDate)
+  const effectivePositions = computeEffectivePositions(transactions, simulationDate)
   const activePositions = effectivePositions.filter(p => !p.is_future)
   const futurePositions = effectivePositions.filter(p => p.is_future)
 

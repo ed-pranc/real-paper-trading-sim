@@ -17,7 +17,7 @@ import {
 import { signOut } from '@/lib/actions/auth'
 
 const navItems = [
-  { href: '/home',      label: 'Home',      icon: Home },
+  { href: '/home',      label: 'Quick Start', icon: Home },
   { href: '/wallet',    label: 'Wallet',    icon: Wallet },
   { href: '/watchlist', label: 'Watchlist', icon: Eye },
   { href: '/portfolio', label: 'Portfolio', icon: BarChart2 },

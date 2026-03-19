@@ -14,7 +14,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { PnLChart } from '@/components/history/pnl-chart'
-import { MonthlyReturns } from '@/components/history/monthly-returns'
+import { TradesInvestedChart } from '@/components/history/trades-invested-chart'
+import { TradesPerYearChart } from '@/components/history/trades-per-year-chart'
 import { WinRateRing } from '@/components/history/win-rate-ring'
 import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
@@ -125,13 +126,13 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         </Card>
         <Card>
           <CardContent className="pt-5 pb-5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Money In</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Bought</p>
             <p className="text-2xl font-bold mt-1">{fmt(totalIn)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5 pb-5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Money Out</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Sold</p>
             <p className="text-2xl font-bold mt-1">{fmt(totalOut)}</p>
           </CardContent>
         </Card>
@@ -157,18 +158,30 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
       <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-base">Total Invested Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TradesInvestedChart transactions={statsTransactions} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Cumulative Realised P/L</CardTitle>
           </CardHeader>
           <CardContent>
             <PnLChart transactions={statsTransactions} />
           </CardContent>
         </Card>
+      </div>
+
+      {/* Trades per Year — full width */}
+      <div className="col-span-12">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Monthly Returns</CardTitle>
+            <CardTitle className="text-base">Trades per Year</CardTitle>
           </CardHeader>
           <CardContent>
-            <MonthlyReturns transactions={statsTransactions} />
+            <TradesPerYearChart transactions={statsTransactions} />
           </CardContent>
         </Card>
       </div>
