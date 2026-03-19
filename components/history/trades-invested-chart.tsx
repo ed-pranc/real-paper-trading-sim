@@ -59,8 +59,8 @@ export function TradesInvestedChart({ transactions }: TradesInvestedChartProps) 
       <AreaChart data={data}>
         <defs>
           <linearGradient id="investedGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor="hsl(var(--primary))" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis
@@ -93,7 +93,7 @@ export function TradesInvestedChart({ transactions }: TradesInvestedChartProps) 
         <Area
           type="stepAfter"
           dataKey="invested"
-          stroke="hsl(var(--primary))"
+          stroke="#22c55e"
           strokeWidth={2}
           fill="url(#investedGrad)"
           dot={false}

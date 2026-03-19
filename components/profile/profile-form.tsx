@@ -36,6 +36,7 @@ interface ProfileData {
 interface ProfileFormProps {
   profile: ProfileData | null
   email: string
+  onSaveSuccess?: () => void
 }
 
 function Field({
@@ -69,7 +70,7 @@ function Field({
   )
 }
 
-export function ProfileForm({ profile, email }: ProfileFormProps) {
+export function ProfileForm({ profile, email, onSaveSuccess }: ProfileFormProps) {
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
   const [firstName, setFirstName] = useState(profile?.first_name ?? '')
   const [lastName, setLastName] = useState(profile?.last_name ?? '')
@@ -109,6 +110,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
         })
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
+        onSaveSuccess?.()
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Save failed')
       }
@@ -116,7 +118,7 @@ export function ProfileForm({ profile, email }: ProfileFormProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground text-sm mt-1">

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { DepositModal } from '@/components/wallet/deposit-modal'
 import { WithdrawModal } from '@/components/wallet/withdraw-modal'
 import { CashDonut } from '@/components/wallet/cash-donut'
+import { DepositsPerYearChart } from '@/components/wallet/deposits-per-year-chart'
 import { PlusCircle, MinusCircle, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle, ArrowUpDown, ArrowUp, ArrowDown, Info, ShieldCheck, TriangleAlert } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { fmtDate, fmtDateTime } from '@/lib/utils'
@@ -179,6 +180,20 @@ export function WalletClient({ depositHistory }: { depositHistory: DepositRow[] 
           </Card>
         </div>
       </div>
+
+      {/* Deposits & withdrawals per year */}
+      {depositHistory.length > 0 && (
+        <div className="col-span-12">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Activity per Year</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <DepositsPerYearChart transactions={depositHistory} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Investment Account ledger */}
       <div className="col-span-12">

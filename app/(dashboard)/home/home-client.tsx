@@ -7,7 +7,6 @@ import {
   BarChart2,
   History,
   CalendarClock,
-  User,
   CheckCircle2,
   Circle,
   ArrowRight,
@@ -35,7 +34,7 @@ import type { LucideIcon } from 'lucide-react'
 
 interface HomeClientProps {
   nickname: string
-  profileComplete: boolean
+  hasDeposit: boolean
   watchlistCount: number
   tradeCount: number
   simulationUsed: boolean
@@ -122,21 +121,21 @@ const MODULES: Module[] = [
 const STEPS = [
   {
     step: '01',
-    title: 'Set up your profile',
-    description: 'Add a nickname so the platform feels personal.',
-    href: '/profile',
-  },
-  {
-    step: '02',
     title: 'Build your watchlist',
-    description: 'Search and add the stocks you want to follow.',
+    description: 'Search any publicly traded stock or ETF and add it to your list. Live prices and 52-week ranges update automatically.',
     href: '/watchlist',
   },
   {
-    step: '03',
-    title: 'Fund & make trades',
-    description: 'Deposit funds and buy stocks — at today\'s prices in Live mode, or travel back to a historical date in Simulation mode to buy at past prices. Advance the sim date to watch your positions change, or hit "Go Live" to jump to today.',
+    step: '02',
+    title: 'Add funds to your wallet',
+    description: 'Deposit cash before trading. Use any past date in Simulation mode to seed your portfolio at a historical point in time.',
     href: '/wallet',
+  },
+  {
+    step: '03',
+    title: 'Make trades',
+    description: 'Buy and sell at today\'s prices in Live mode, or travel back in time with Simulation mode to test strategies at historical prices.',
+    href: '/watchlist',
   },
   {
     step: '04',
@@ -148,16 +147,16 @@ const STEPS = [
 
 export function HomeClient({
   nickname,
-  profileComplete,
+  hasDeposit,
   watchlistCount,
   tradeCount,
   simulationUsed,
 }: HomeClientProps) {
   const checklist = [
-    { label: 'Set up your profile',   done: profileComplete,    href: '/profile' },
-    { label: 'Build your watchlist',  done: watchlistCount > 0, href: '/watchlist' },
-    { label: 'Make your first trade', done: tradeCount > 0,     href: '/watchlist' },
-    { label: 'Try Simulation Mode',   done: simulationUsed,     href: '#simulation' },
+    { label: 'Build your watchlist',        done: watchlistCount > 0, href: '/watchlist' },
+    { label: 'Add funds to your wallet',    done: hasDeposit,         href: '/wallet' },
+    { label: 'Make your first trade',       done: tradeCount > 0,     href: '/watchlist' },
+    { label: 'Try Simulation Mode',         done: simulationUsed,     href: '#simulation' },
   ]
   const completedCount = checklist.filter(c => c.done).length
   const progressPct = Math.round((completedCount / checklist.length) * 100)
@@ -272,13 +271,7 @@ export function HomeClient({
                     ))}
                   </ul>
                 </div>
-                {isAnchor ? (
-                  <Button variant="ghost" size="sm" className="self-start -ml-2 text-amber-500" asChild>
-                    <a href={href}>
-                      Learn how it works <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                    </a>
-                  </Button>
-                ) : (
+                {!isAnchor && (
                   <Button variant="ghost" size="sm" className="self-start -ml-2 text-primary" asChild>
                     <Link href={href}>
                       Go to {title} <ArrowRight className="h-3.5 w-3.5 ml-1" />

@@ -265,7 +265,6 @@ export function WatchlistRow({
         symbol={symbol}
         companyName={companyName}
         price={price}
-        mode="buy"
       />
     </>
   )
