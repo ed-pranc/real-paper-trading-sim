@@ -3,8 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { withdrawFunds } from '@/lib/actions/wallet'
 import { useWallet } from '@/context/wallet'
 import { useSimulationDate } from '@/context/simulation-date'
@@ -43,7 +42,7 @@ function fireFireworks() {
 }
 
 export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) {
-  const [amount, setAmount] = useState('')
+  const [amount, setAmount] = useState('0')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
   const [happiness, setHappiness] = useState(false)
@@ -51,7 +50,7 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
   const { simulationDate } = useSimulationDate()
 
   function handleClose() {
-    setAmount('')
+    setAmount('0')
     setError('')
     setHappiness(false)
     onClose()
@@ -96,22 +95,31 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="withdraw-amount">Amount (USD)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                  <Input
-                    id="withdraw-amount"
-                    type="number"
-                    min="1"
-                    max={maxAmount}
-                    placeholder="10,000"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="pl-7 text-lg"
-                    onKeyDown={(e) => e.key === 'Enter' && handleWithdraw()}
-                    autoFocus
-                  />
+              <div className="space-y-3">
+                <div className="text-center">
+                  <span className="text-2xl font-semibold">{fmt(parseFloat(amount) || 0)}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">of {fmt(maxAmount)} available</p>
+                </div>
+
+                <Slider
+                  min={0}
+                  max={maxAmount}
+                  step={maxAmount / 1_000_000}
+                  value={[parseFloat(amount) || 0]}
+                  onValueChange={([v]) => setAmount(parseFloat(v.toFixed(2)).toString())}
+                  className="w-full"
+                />
+
+                <div className="flex gap-2">
+                  {[0.25, 0.5, 0.75, 1].map((pct) => (
+                    <button
+                      key={pct}
+                      onClick={() => setAmount((maxAmount * pct).toFixed(2))}
+                      className="flex-1 text-xs py-1 rounded-full border border-border hover:bg-accent transition-colors"
+                    >
+                      {pct === 1 ? 'All' : `${pct * 100}%`}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -123,22 +131,6 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
                 </p>
               )}
 
-              {/* Quick amount buttons */}
-              <div className="flex gap-2">
-                {[1000, 5000, 10000, 50000].map((preset) => (
-                  <Button
-                    key={preset}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 rounded-full text-xs"
-                    onClick={() => setAmount(String(preset))}
-                    disabled={preset > maxAmount}
-                  >
-                    ${preset.toLocaleString()}
-                  </Button>
-                ))}
-              </div>
-
               {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
 
@@ -148,7 +140,7 @@ export function WithdrawModal({ open, onClose, maxAmount }: WithdrawModalProps) 
               </Button>
               <Button
                 onClick={handleWithdraw}
-                disabled={isPending || !amount}
+                disabled={isPending || parseFloat(amount) <= 0}
                 className="rounded-full bg-green-600 hover:bg-green-700"
               >
                 {isPending ? 'Withdrawing…' : 'Yes, give me happiness!'}
