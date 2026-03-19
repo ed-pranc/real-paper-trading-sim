@@ -18,20 +18,22 @@ export async function depositFunds(amount: number, simulationDate?: string | nul
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { data: wallet } = await supabase
-    .from('wallet_balance')
-    .select('cash_balance')
-    .eq('user_id', user.id)
-    .single()
+  if (!simulationDate) {
+    const { data: wallet } = await supabase
+      .from('wallet_balance')
+      .select('cash_balance')
+      .eq('user_id', user.id)
+      .single()
 
-  const newBalance = (Number(wallet?.cash_balance) || 0) + parsed
+    const newBalance = (Number(wallet?.cash_balance) || 0) + parsed
 
-  await supabase
-    .from('wallet_balance')
-    .upsert(
-      { user_id: user.id, cash_balance: newBalance, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    )
+    await supabase
+      .from('wallet_balance')
+      .upsert(
+        { user_id: user.id, cash_balance: newBalance, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+  }
 
   await supabase.from('wallet_deposits').insert({
     user_id: user.id,
@@ -56,21 +58,23 @@ export async function withdrawFunds(amount: number, simulationDate?: string | nu
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { data: wallet } = await supabase
-    .from('wallet_balance')
-    .select('cash_balance')
-    .eq('user_id', user.id)
-    .single()
+  if (!simulationDate) {
+    const { data: wallet } = await supabase
+      .from('wallet_balance')
+      .select('cash_balance')
+      .eq('user_id', user.id)
+      .single()
 
-  const current = Number(wallet?.cash_balance) || 0
-  if (current < parsed) throw new Error('Insufficient balance')
+    const current = Number(wallet?.cash_balance) || 0
+    if (current < parsed) throw new Error('Insufficient balance')
 
-  await supabase
-    .from('wallet_balance')
-    .upsert(
-      { user_id: user.id, cash_balance: current - parsed, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    )
+    await supabase
+      .from('wallet_balance')
+      .upsert(
+        { user_id: user.id, cash_balance: current - parsed, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
+  }
 
   await supabase.from('wallet_deposits').insert({
     user_id: user.id,

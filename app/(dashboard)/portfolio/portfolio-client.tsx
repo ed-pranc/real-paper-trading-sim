@@ -194,7 +194,7 @@ export function PortfolioClient({
     quantity: p.quantity,
   }))
 
-  const hasAnyPositions = positions.length > 0
+  const hasAnyPositions = effectivePositions.length > 0
 
   return (
     <div className="grid grid-cols-12 gap-6">
