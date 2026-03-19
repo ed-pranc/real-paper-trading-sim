@@ -41,7 +41,7 @@ function DashboardShellInner({ children, userId, nickname, profile, email }: Das
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <PriceAlertDialog alert={triggeredAlert} onDismiss={dismiss} />
       <ProfileModal
         open={profileOpen}

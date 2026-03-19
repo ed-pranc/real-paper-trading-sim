@@ -112,7 +112,7 @@ const MODULES: Module[] = [
       { icon: ToggleLeft,  text: 'Toggle between Live (today) and Simulation (any past date)' },
       { icon: CalendarDays,text: 'Pick any historical date back to 2000 from a calendar' },
       { icon: Tag,         text: 'All deposits and trades are automatically date-stamped' },
-      { icon: Zap,         text: 'Hit "Go Live" in the footer to jump back to today\'s prices' },
+      { icon: Zap,         text: 'Use the LIVE toggle in the header to switch back to today\'s prices' },
     ],
     isAnchor: true,
   },
