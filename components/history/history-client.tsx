@@ -17,9 +17,10 @@ import { PnLChart } from '@/components/history/pnl-chart'
 import { TradesInvestedChart } from '@/components/history/trades-invested-chart'
 import { TradesPerYearChart } from '@/components/history/trades-per-year-chart'
 import { WinRateRing } from '@/components/history/win-rate-ring'
-import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, History, ArrowUpDown, FastForward, Rewind } from 'lucide-react'
 import { StockDetailSheet } from '@/components/stock/stock-detail-sheet'
-import { fmtDate, fmtDateTime } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { fmtDate } from '@/lib/utils'
 import { LABELS } from '@/lib/labels'
 import { useSimulationDate } from '@/context/simulation-date'
 
@@ -40,7 +41,7 @@ function fmt(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 }
 
-type SortKey = 'trade_date' | 'symbol' | 'total' | 'pnl'
+type SortKey = 'trade_date' | 'symbol' | 'total' | 'pnl' | 'price' | 'type' | 'simulation_date'
 type SortDir = 'asc' | 'desc'
 
 function SortBtn({ k, label, onToggle, className }: { k: SortKey; label: string; onToggle: (key: SortKey) => void; className?: string }) {
@@ -58,10 +59,10 @@ function SortBtn({ k, label, onToggle, className }: { k: SortKey; label: string;
 export function HistoryClient({ transactions }: { transactions: Transaction[] }) {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('trade_date')
+  const [sortKey, setSortKey] = useState<SortKey>('simulation_date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [typeFilter, setTypeFilter] = useState<'all' | 'buy' | 'sell'>('all')
-  const { simulationDate } = useSimulationDate()
+  const { simulationDate, setSimulationDate } = useSimulationDate()
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -93,6 +94,13 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
       else if (sortKey === 'symbol') cmp = a.symbol.localeCompare(b.symbol)
       else if (sortKey === 'total') cmp = a.total - b.total
       else if (sortKey === 'pnl') cmp = (a.pnl ?? 0) - (b.pnl ?? 0)
+      else if (sortKey === 'price') cmp = a.price - b.price
+      else if (sortKey === 'type') cmp = a.type.localeCompare(b.type)
+      else if (sortKey === 'simulation_date') {
+        const aDate = a.simulation_date ?? a.trade_date.slice(0, 10)
+        const bDate = b.simulation_date ?? b.trade_date.slice(0, 10)
+        cmp = aDate.localeCompare(bDate)
+      }
       return sortDir === 'asc' ? cmp : -cmp
     })
   }, [transactions, from, to, sortKey, sortDir, typeFilter, simulationDate])
@@ -111,7 +119,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
         </p>
         {simulationDate && (
           <p className="text-xs text-amber-500 mt-1">
-            Stats showing trades up to sim date {fmtDate(simulationDate)}
+            Stats showing trades up to SIM date {fmtDate(simulationDate)}
           </p>
         )}
       </div>
@@ -243,26 +251,26 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
                     <TableRow>
                       <TableHead className="w-8"></TableHead>
                       <TableHead><SortBtn k="symbol" label="Asset" onToggle={toggleSort} /></TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead><SortBtn k="type" label="Type" onToggle={toggleSort} /></TableHead>
                       <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">
+                        <SortBtn k="price" label="Price" onToggle={toggleSort} className="justify-end w-full" />
+                      </TableHead>
                       <TableHead className="text-right">
                         <SortBtn k="total" label="Total" onToggle={toggleSort} className="justify-end w-full" />
                       </TableHead>
                       <TableHead className="text-right">
                         <SortBtn k="pnl" label="P/L" onToggle={toggleSort} className="justify-end w-full" />
                       </TableHead>
-                      <TableHead>
-                        <SortBtn k="trade_date" label="Trade Date" onToggle={toggleSort} />
-                      </TableHead>
-                      <TableHead className="hidden xl:table-cell">Sim Date</TableHead>
+                      <TableHead className="hidden xl:table-cell"><SortBtn k="simulation_date" label="SIM Date" onToggle={toggleSort} /></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.map(t => {
                       const pnlPositive = (t.pnl ?? 0) >= 0
+                      const isFuture = !!(simulationDate && t.simulation_date && t.simulation_date > simulationDate)
                       return (
-                        <TableRow key={t.id}>
+                        <TableRow key={t.id} className={isFuture ? 'opacity-50' : ''}>
                           <TableCell>
                             {t.type === 'buy'
                               ? <ArrowDownCircle className="h-5 w-5 text-green-500" />
@@ -275,6 +283,25 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
                                 <p className="text-xs text-muted-foreground truncate max-w-28">{t.company_name}</p>
                               </div>
                             </StockDetailSheet>
+                            {simulationDate && t.simulation_date && (
+                              <div className="xl:hidden mt-0.5">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className={`h-5 w-5 ${isFuture ? 'text-amber-500 hover:text-amber-400 hover:bg-amber-500/10' : 'text-muted-foreground hover:text-muted-foreground/70 hover:bg-muted/50'}`}
+                                      onClick={() => setSimulationDate(t.simulation_date!)}
+                                    >
+                                      {isFuture ? <FastForward className="h-3 w-3" /> : <Rewind className="h-3 w-3" />}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {isFuture ? 'Fast-forward SIM to' : 'Rewind SIM to'} {fmtDate(t.simulation_date)}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-xs rounded-full ${t.type === 'buy' ? 'bg-green-600/20 text-green-500 border-green-600/30' : 'bg-red-600/20 text-red-500 border-red-600/30'}`} variant="outline">
@@ -299,12 +326,51 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
                               <span className="text-xs text-muted-foreground">—</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-muted-foreground">{fmtDateTime(t.trade_date)}</span>
-                          </TableCell>
                           <TableCell className="hidden xl:table-cell">
                             {t.simulation_date ? (
-                              <Badge variant="secondary" className="text-xs">{fmtDate(t.simulation_date)}</Badge>
+                              simulationDate ? (
+                                isFuture ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge className="bg-red-600 text-white hover:bg-red-600 text-xs tabular-nums font-medium">
+                                      {fmtDate(t.simulation_date)}
+                                    </Badge>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-6 w-6 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                                          onClick={() => setSimulationDate(t.simulation_date!)}
+                                        >
+                                          <FastForward className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Fast-forward SIM to {fmtDate(t.simulation_date)}</TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge className="bg-muted text-muted-foreground hover:bg-muted text-xs tabular-nums font-medium">
+                                      {fmtDate(t.simulation_date)}
+                                    </Badge>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-6 w-6 text-muted-foreground hover:text-muted-foreground/70 hover:bg-muted/50"
+                                          onClick={() => setSimulationDate(t.simulation_date!)}
+                                        >
+                                          <Rewind className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Rewind SIM to {fmtDate(t.simulation_date)}</TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                )
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">{fmtDate(t.simulation_date)}</Badge>
+                              )
                             ) : (
                               <span className="text-xs text-muted-foreground">Live</span>
                             )}

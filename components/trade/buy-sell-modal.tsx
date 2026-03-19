@@ -175,7 +175,7 @@ export function BuySellModal({
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">{symbol}</Badge>
             <span className="text-muted-foreground text-xs">
-              {simulationDate ? `Sim: ${simulationDate}` : 'Live price'}
+              {simulationDate ? `SIM: ${simulationDate}` : 'Live price'}
             </span>
           </div>
           <span className="font-semibold">${fmt2(price)}</span>

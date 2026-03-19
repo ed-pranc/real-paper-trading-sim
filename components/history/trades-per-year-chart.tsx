@@ -49,14 +49,14 @@ export function TradesPerYearChart({ transactions }: TradesPerYearChartProps) {
 
   return (
     <ChartContainer config={chartConfig} className="h-40">
-      <BarChart data={data} barCategoryGap="35%" barGap={2}>
+      <BarChart data={data} barCategoryGap="35%" barGap={2} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
         <XAxis
           dataKey="year"
           tick={{ fontSize: 10 }}
           tickLine={false}
           axisLine={false}
         />
-        <YAxis hide domain={[0, 'auto']} />
+        <YAxis hide width={0} domain={[0, 'auto']} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Bar dataKey="buys"  fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
         <Bar dataKey="sells" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
