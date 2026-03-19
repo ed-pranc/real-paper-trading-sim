@@ -21,7 +21,7 @@ import { SimulationDateSelector } from '@/components/simulation/simulation-date-
 import { useEffect, useState } from 'react'
 
 const PAGE_LABELS: Record<string, string> = {
-  '/home':      'Home',
+  '/home':      'Quick Start',
   '/wallet':    'Wallet',
   '/watchlist': 'Watchlist',
   '/portfolio': 'Portfolio',

@@ -11,12 +11,27 @@ import {
   CheckCircle2,
   Circle,
   ArrowRight,
+  PlusCircle,
+  TrendingUp,
+  ScrollText,
+  Clock,
+  Search,
+  Activity,
+  EyeOff,
+  Tag,
+  ArrowUpDown,
+  BookOpen,
+  Trophy,
+  ToggleLeft,
+  CalendarDays,
+  Zap,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
+import type { LucideIcon } from 'lucide-react'
 
 interface HomeClientProps {
   nickname: string
@@ -26,102 +41,107 @@ interface HomeClientProps {
   simulationUsed: boolean
 }
 
-const MODULES = [
+interface ModuleFeature { icon: LucideIcon; text: string }
+interface Module {
+  href: string
+  icon: LucideIcon
+  title: string
+  badge: string | null
+  intro: string
+  features: ModuleFeature[]
+  isAnchor?: boolean
+}
+
+const MODULES: Module[] = [
   {
     href: '/wallet',
     icon: Wallet,
     title: 'Wallet',
     badge: null,
-    description:
-      'Your financial foundation. Deposit virtual funds to get started — your wallet tracks your available cash, total invested amount, and real-time portfolio value at a glance.',
+    intro: 'Your financial command centre.',
+    features: [
+      { icon: PlusCircle,  text: 'Deposit or withdraw funds at any date — Live or past' },
+      { icon: TrendingUp,  text: 'Tracks cash, invested amount, unrealised & realised P/L' },
+      { icon: ScrollText,  text: 'Full ledger with running balance and tax position' },
+      { icon: Clock,       text: 'Future-dated deposits appear greyed in Simulation mode' },
+    ],
   },
   {
     href: '/watchlist',
     icon: Eye,
     title: 'Watchlist',
     badge: null,
-    description:
-      'Your market radar. Search for any publicly traded stock and add it to your personal watchlist. Monitor live prices, track 52-week ranges, and jump straight into a trade from here.',
+    intro: 'Your market radar for stocks and ETFs.',
+    features: [
+      { icon: Search,       text: 'Search any publicly traded stock or ETF and add to your list' },
+      { icon: Activity,     text: 'Live prices, day change, and 52-week high/low at a glance' },
+      { icon: CalendarClock,text: 'Jump to a stock\'s first trading day in Simulation mode' },
+      { icon: EyeOff,       text: 'Pre-listing dates are automatically greyed out' },
+    ],
   },
   {
     href: '/portfolio',
     icon: BarChart2,
     title: 'Portfolio',
     badge: null,
-    description:
-      'Your active positions. Every stock you buy appears here with live P&L tracking. See exactly how each holding is performing and manage positions with one click.',
+    intro: 'Your open positions, live.',
+    features: [
+      { icon: TrendingUp,  text: 'Every holding shown with live unrealised P/L' },
+      { icon: Tag,         text: 'Average buy price vs current market price per position' },
+      { icon: ArrowUpDown, text: 'Sell positions with one click directly from the table' },
+    ],
   },
   {
     href: '/history',
     icon: History,
     title: 'History',
     badge: null,
-    description:
-      'The full story. Every buy and sell is recorded. Analyse your cumulative P&L, explore monthly returns, and review your win rate across all closed trades.',
+    intro: 'The complete record of every trade you\'ve made.',
+    features: [
+      { icon: BookOpen,   text: 'Every buy and sell logged with date, price, and P/L' },
+      { icon: BarChart2,  text: 'Cumulative P/L chart and monthly performance breakdown' },
+      { icon: Trophy,     text: 'Win rate and closed-trade summary across your full history' },
+    ],
   },
   {
     href: '#simulation',
     icon: CalendarClock,
     title: 'Simulation Mode',
     badge: 'Feature',
-    description:
-      'Trade the past. Pick any historical date and the platform locks all prices to that moment. Buy and sell as if you were there — then advance the date to see how your decisions played out.',
+    intro: 'Trade the past with real historical prices.',
+    features: [
+      { icon: ToggleLeft,  text: 'Toggle between Live (today) and Simulation (any past date)' },
+      { icon: CalendarDays,text: 'Pick any historical date back to 2000 from a calendar' },
+      { icon: Tag,         text: 'All deposits and trades are automatically date-stamped' },
+      { icon: Zap,         text: 'Hit "Go Live" in the footer to jump back to today\'s prices' },
+    ],
     isAnchor: true,
   },
 ]
 
-const SIM_STEPS = [
+const STEPS = [
   {
     step: '01',
-    title: 'Set a historical date',
-    description: 'Use the date picker in the top bar to travel back in time — e.g. 2021-01-01. All prices lock to that date.',
-  },
-  {
-    step: '02',
-    title: 'Deposit & buy shares',
-    description: 'Deposit virtual funds and buy stocks at their historical price. Your deposit is stamped with your chosen sim date.',
-  },
-  {
-    step: '03',
-    title: 'Advance the date',
-    description: 'Move the sim date forward step by step, or click "Go Live" in the footer to jump straight to today\'s prices.',
-  },
-  {
-    step: '04',
-    title: 'Check your profit',
-    description: 'The portfolio and footer show your unrealised P/L vs. your historical cost basis — exactly what you would have made.',
-  },
-]
-
-const WORKFLOW_STEPS = [
-  {
-    step: '01',
-    title: 'Set up your Profile',
+    title: 'Set up your profile',
     description: 'Add a nickname so the platform feels personal.',
     href: '/profile',
   },
   {
     step: '02',
-    title: 'Fund your Wallet',
-    description: 'Deposit any amount of virtual cash to begin trading.',
-    href: '/wallet',
-  },
-  {
-    step: '03',
-    title: 'Build a Watchlist',
+    title: 'Build your watchlist',
     description: 'Search and add the stocks you want to follow.',
     href: '/watchlist',
   },
   {
-    step: '04',
-    title: 'Make your first trade',
-    description: 'Hit Buy on any watchlist item to open a position.',
-    href: '/watchlist',
+    step: '03',
+    title: 'Fund & make trades',
+    description: 'Deposit funds and buy stocks — at today\'s prices in Live mode, or travel back to a historical date in Simulation mode to buy at past prices. Advance the sim date to watch your positions change, or hit "Go Live" to jump to today.',
+    href: '/wallet',
   },
   {
-    step: '05',
+    step: '04',
     title: 'Review your results',
-    description: 'Check Portfolio for live P&L and History for all trades.',
+    description: 'Check Portfolio for live P&L on open positions, and History for all closed trades, cumulative performance, and realised gains.',
     href: '/history',
   },
 ]
@@ -134,10 +154,10 @@ export function HomeClient({
   simulationUsed,
 }: HomeClientProps) {
   const checklist = [
-    { label: 'Complete your profile', done: profileComplete, href: '/profile' },
-    { label: 'Add stocks to your watchlist', done: watchlistCount > 0, href: '/watchlist' },
-    { label: 'Make your first trade', done: tradeCount > 0, href: '/watchlist' },
-    { label: 'Try simulation mode', done: simulationUsed, href: '#simulation-hint' },
+    { label: 'Set up your profile',   done: profileComplete,    href: '/profile' },
+    { label: 'Build your watchlist',  done: watchlistCount > 0, href: '/watchlist' },
+    { label: 'Make your first trade', done: tradeCount > 0,     href: '/watchlist' },
+    { label: 'Try Simulation Mode',   done: simulationUsed,     href: '#simulation' },
   ]
   const completedCount = checklist.filter(c => c.done).length
   const progressPct = Math.round((completedCount / checklist.length) * 100)
@@ -151,15 +171,83 @@ export function HomeClient({
           Welcome back, {nickname} 👋
         </h1>
         <p className="text-muted-foreground max-w-xl">
-          RPTSim is your virtual trading desk — practice investing with real market data, no real money at risk.
+          RPTSim is your virtual trading desk — practice investing with real market data, travel back in time to test strategies, no real money at risk.
         </p>
       </div>
+
+      {/* Getting started checklist — hidden once all items complete */}
+      {!allDone && (
+        <>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Getting started</h2>
+              <span className="text-sm text-muted-foreground">
+                {completedCount} / {checklist.length} complete
+              </span>
+            </div>
+
+            <Progress value={progressPct} className="h-2" />
+
+            <div className="grid gap-2">
+              {checklist.map(({ label, done, href }) => (
+                <Link
+                  key={label}
+                  href={done ? '#' : href}
+                  className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                    done
+                      ? 'border-green-600/20 bg-green-600/5 cursor-default'
+                      : 'border-border hover:bg-accent/50 cursor-pointer'
+                  }`}
+                >
+                  {done
+                    ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
+                  }
+                  <span className={`text-sm ${done ? 'line-through text-muted-foreground' : 'font-medium'}`}>
+                    {label}
+                  </span>
+                  {!done && <ArrowRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+        </>
+      )}
+
+      {/* How it works — unified 4-step workflow */}
+      <div id="simulation" className="space-y-4">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-amber-500/10 text-amber-500">
+            <CalendarClock className="h-4 w-4" />
+          </div>
+          <h2 className="text-lg font-semibold">How it works</h2>
+        </div>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Four steps to get started — trade at today&apos;s prices or travel back in time with Simulation Mode.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {STEPS.map(({ step, title, description, href }) => (
+            <Link key={step} href={href} className="group">
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-1.5 h-full hover:border-amber-500/40 transition-colors">
+                <span className="text-xs font-mono text-amber-500 font-bold">{step}</span>
+                <p className="text-sm font-semibold group-hover:text-amber-500 transition-colors">{title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <Separator />
 
       {/* Platform modules */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Platform modules</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MODULES.map(({ href, icon: Icon, title, badge, description, isAnchor }) => (
+          {MODULES.map(({ href, icon: Icon, title, badge, intro, features, isAnchor }) => (
             <Card key={title} className="flex flex-col hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -173,9 +261,17 @@ export function HomeClient({
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col flex-1 gap-4">
-                <CardDescription className="text-sm leading-relaxed flex-1">
-                  {description}
-                </CardDescription>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm text-muted-foreground">{intro}</p>
+                  <ul className="space-y-1.5">
+                    {features.map(({ icon: FIcon, text }) => (
+                      <li key={text} className="flex items-start gap-2">
+                        <FIcon className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${isAnchor ? 'text-amber-500' : 'text-primary/60'}`} />
+                        <span className="text-xs text-muted-foreground leading-snug">{text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
                 {isAnchor ? (
                   <Button variant="ghost" size="sm" className="self-start -ml-2 text-amber-500" asChild>
                     <a href={href}>
@@ -193,99 +289,6 @@ export function HomeClient({
             </Card>
           ))}
         </div>
-      </div>
-
-      <Separator />
-
-      {/* How it works */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">How it works</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {WORKFLOW_STEPS.map(({ step, title, description, href }, i) => (
-            <div key={step} className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 lg:flex-col lg:items-start">
-                <span className="text-xs font-mono text-primary font-bold">{step}</span>
-                {i < WORKFLOW_STEPS.length - 1 && (
-                  <div className="hidden lg:block h-px flex-1 bg-border mt-0.5" />
-                )}
-              </div>
-              <Link href={href} className="group">
-                <p className="text-sm font-semibold group-hover:text-primary transition-colors">{title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* How simulation works */}
-      <div id="simulation" className="space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-amber-500/10 text-amber-500">
-            <CalendarClock className="h-4 w-4" />
-          </div>
-          <h2 className="text-lg font-semibold">How Simulation Mode works</h2>
-        </div>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Simulation mode lets you travel back to any point in history and trade with real market prices from that date.
-          Advance time to see exactly what profit (or loss) you would have made.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SIM_STEPS.map(({ step, title, description }) => (
-            <div key={step} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 space-y-1.5">
-              <span className="text-xs font-mono text-amber-500 font-bold">{step}</span>
-              <p className="text-sm font-semibold">{title}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Get started checklist */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {allDone ? '🎉 All set!' : 'Get started'}
-          </h2>
-          <span className="text-sm text-muted-foreground">
-            {completedCount} / {checklist.length} complete
-          </span>
-        </div>
-
-        <Progress value={progressPct} className="h-2" />
-
-        <div className="grid gap-2">
-          {checklist.map(({ label, done, href }) => (
-            <Link
-              key={label}
-              href={done ? '#' : href}
-              className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                done
-                  ? 'border-green-600/20 bg-green-600/5 cursor-default'
-                  : 'border-border hover:bg-accent/50 cursor-pointer'
-              }`}
-            >
-              {done
-                ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                : <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
-              }
-              <span className={`text-sm ${done ? 'line-through text-muted-foreground' : 'font-medium'}`}>
-                {label}
-              </span>
-              {!done && <ArrowRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />}
-            </Link>
-          ))}
-        </div>
-
-        {!simulationUsed && (
-          <p className="text-xs text-muted-foreground">
-            💡 New to simulation? See the <a href="#simulation" className="underline underline-offset-2 text-amber-500 hover:opacity-70">How Simulation Mode works</a> section above.
-          </p>
-        )}
       </div>
     </div>
   )

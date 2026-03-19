@@ -23,7 +23,6 @@ interface DepositRow {
   type: string
   amount: number
   created_at: string
-  simulation_date?: string | null
 }
 
 function fmt(n: number) {
@@ -46,8 +45,8 @@ export function WalletClient({ depositHistory }: { depositHistory: DepositRow[] 
   const pnlPositive = summary.pnl >= 0
 
   function isFuture(row: DepositRow): boolean {
-    if (!simulationDate || !row.simulation_date) return false
-    return row.simulation_date > simulationDate
+    if (!simulationDate) return false
+    return row.created_at.slice(0, 10) > simulationDate
   }
 
   // Running balance in chronological order; future rows don't move the balance
@@ -216,11 +215,6 @@ export function WalletClient({ depositHistory }: { depositHistory: DepositRow[] 
                     <TableRow key={row.id} className={row.future ? 'opacity-40' : ''}>
                       <TableCell className="text-muted-foreground tabular-nums">
                         {fmtDateTime(row.created_at)}
-                        {row.simulation_date && (
-                          <span className={`ml-2 text-[11px] font-medium ${row.future ? 'text-muted-foreground italic' : 'text-amber-500'}`}>
-                            SIM {fmtDate(row.simulation_date)}
-                          </span>
-                        )}
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center gap-1.5 font-medium ${row.future ? 'text-muted-foreground' : row.type === 'deposit' ? 'text-green-500' : 'text-red-500'}`}>
