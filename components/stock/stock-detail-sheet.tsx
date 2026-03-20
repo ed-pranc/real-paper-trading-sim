@@ -10,6 +10,7 @@ import {
 import { SheetTrigger } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { fmtDate } from '@/lib/utils'
 import { SymbolAvatar } from '@/components/ui/symbol-avatar'
 import { StockChart } from '@/components/trade/stock-chart'
 import { AnalystForecast } from '@/components/stock/analyst-forecast'
@@ -94,7 +95,7 @@ export function StockDetailSheet({ symbol, companyName, simulationDate, children
               <div className="flex items-center gap-2">
                 <SheetTitle className="text-base font-bold">{symbol}</SheetTitle>
                 {simulationDate && (
-                  <Badge variant="secondary" className="text-[10px]">SIM</Badge>
+                  <Badge variant="secondary" className="text-[10px] py-0 px-1.5">{fmtDate(simulationDate)}</Badge>
                 )}
               </div>
               <p className="text-xs text-muted-foreground truncate">{companyName}</p>

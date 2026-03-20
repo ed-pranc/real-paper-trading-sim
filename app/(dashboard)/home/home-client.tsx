@@ -116,6 +116,7 @@ const MODULES: Module[] = [
       { icon: ScrollText,  text: 'Annotated trades appear on a chronological timeline' },
       { icon: Tag,         text: 'Each entry shows the trade, P/L (sells), and your note' },
       { icon: Activity,    text: 'Annotate past trades from History — they appear here instantly' },
+      { icon: Clock,       text: 'In Simulation mode, entries beyond the active date are greyed out' },
     ],
   },
   {
