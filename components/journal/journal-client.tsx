@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition, useMemo } from 'react'
-import { fmtDateTime } from '@/lib/utils'
+import { fmtDate, fmtDateTime } from '@/lib/utils'
+import { useSimulationDate } from '@/context/simulation-date'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,6 +51,16 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const [isPending, startTransition] = useTransition()
+  const { simulationDate } = useSimulationDate()
+
+  // SIM entry is inactive when the user has rewound to before the trade's sim date
+  function isEntryInactive(entry: JournalEntry): boolean {
+    return (
+      simulationDate !== null &&
+      entry.simulation_date !== null &&
+      entry.simulation_date > simulationDate
+    )
+  }
 
   const filtered = useMemo(() =>
     entries
@@ -92,7 +103,7 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
     })
   }
 
-  // Empty state — no entries at all
+  // Empty state
   if (entries.length === 0) {
     return (
       <div className="grid grid-cols-12 gap-6">
@@ -132,7 +143,6 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
 
       {/* Filters */}
       <div className="col-span-12 flex flex-wrap items-center gap-2">
-        {/* Type filter */}
         {(['all', 'buy', 'sell'] as const).map(t => (
           <Button
             key={t}
@@ -145,7 +155,6 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
           </Button>
         ))}
 
-        {/* Symbol search */}
         <Input
           placeholder="Filter by symbol…"
           value={symbolSearch}
@@ -153,7 +162,6 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
           className="h-8 w-40 text-xs"
         />
 
-        {/* Clear */}
         {(typeFilter !== 'all' || symbolSearch) && (
           <Button
             variant="ghost"
@@ -181,31 +189,35 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
             </Button>
           </div>
         ) : (
-          <div className="relative border-l-2 border-border ml-3 space-y-6 max-w-2xl">
-            {filtered.map((entry) => {
-              const isBuy = entry.type === 'buy'
-              const hasPnl = !isBuy && entry.pnl != null
-              const pnlPositive = hasPnl && entry.pnl! >= 0
-              const isEditing = editingId === entry.id
+          <div className="relative">
+            {/* Mobile: left-aligned vertical line */}
+            <div className="md:hidden absolute left-2 top-0 bottom-0 w-0.5 bg-border" />
+            {/* Desktop: centered vertical line */}
+            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-border" />
 
-              return (
-                <div key={entry.id} className="relative pl-8">
-                  {/* Timeline dot */}
-                  <span
-                    className={`absolute -left-[9px] top-3 w-4 h-4 rounded-full border-2 border-background ${
-                      isBuy ? 'bg-green-500' : 'bg-red-500'
-                    }`}
-                  />
+            <div className="space-y-6 pb-2">
+              {filtered.map((entry) => {
+                const isBuy = entry.type === 'buy'
+                const hasPnl = !isBuy && entry.pnl != null
+                const pnlPositive = hasPnl && entry.pnl! >= 0
+                const isEditing = editingId === entry.id
+                const inactive = isEntryInactive(entry)
 
-                  {/* Card */}
-                  <div className="rounded-lg border bg-card p-4 space-y-3">
+                // Date label: SIM entries show the simulation date only; LIVE entries show date+time
+                const dateLabel = entry.simulation_date
+                  ? fmtDate(entry.simulation_date)
+                  : fmtDateTime(entry.trade_date)
+
+                // Card shared by mobile and desktop
+                const card = (
+                  <div className={`w-full rounded-lg border bg-card p-4 space-y-3 transition-opacity ${inactive ? 'opacity-40' : ''}`}>
                     {/* Header row */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span>{fmtDateTime(entry.trade_date)}</span>
-                        {entry.simulation_date && (
-                          <Badge variant="outline" className="text-[10px] py-0 px-1.5">SIM</Badge>
-                        )}
+                        {entry.simulation_date
+                          ? <Badge variant="secondary" className="text-[10px] py-0 px-1.5">{fmtDate(entry.simulation_date)}</Badge>
+                          : <span>{dateLabel}</span>
+                        }
                         <Badge
                           variant="outline"
                           className={`text-[10px] py-0 px-1.5 ${
@@ -218,14 +230,13 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
                         </Badge>
                       </div>
 
-                      {/* Action icons */}
                       <div className="flex items-center gap-1 shrink-0">
                         <Button
                           size="icon"
                           variant="ghost"
                           className="h-6 w-6 text-muted-foreground hover:text-foreground"
                           onClick={() => isEditing ? cancelEdit() : startEdit(entry)}
-                          disabled={isPending}
+                          disabled={isPending || inactive}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -236,7 +247,7 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                              disabled={isPending}
+                              disabled={isPending || inactive}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -308,9 +319,37 @@ export function JournalClient({ entries: initialEntries }: JournalClientProps) {
                       )}
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+
+                return (
+                  <div key={entry.id} className={`relative ${inactive ? 'pointer-events-none select-none' : ''}`}>
+
+                    {/* ── MOBILE: classic left-aligned timeline ── */}
+                    <div className="md:hidden relative pl-9">
+                      <span className={`absolute left-0 top-3 z-10 w-4 h-4 rounded-full border-2 border-background ${isBuy ? 'bg-green-500' : 'bg-red-500'}`} />
+                      {card}
+                    </div>
+
+                    {/* ── DESKTOP: centered timeline, buys left / sells right ── */}
+                    <div className="hidden md:flex items-start">
+                      {/* Left half — BUY cards */}
+                      <div className="w-1/2 pr-10 flex justify-end">
+                        {isBuy ? card : null}
+                      </div>
+
+                      {/* Center dot */}
+                      <span className={`absolute left-1/2 -translate-x-1/2 top-3 z-10 w-4 h-4 rounded-full border-2 border-background ${isBuy ? 'bg-green-500' : 'bg-red-500'}`} />
+
+                      {/* Right half — SELL cards */}
+                      <div className="w-1/2 pl-10">
+                        {!isBuy ? card : null}
+                      </div>
+                    </div>
+
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
       </div>
