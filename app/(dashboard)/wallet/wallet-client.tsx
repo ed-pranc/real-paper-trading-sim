@@ -93,7 +93,7 @@ export function WalletClient({ depositHistory }: { depositHistory: DepositRow[] 
       <div className="col-span-12">
         <h1 className="text-2xl font-bold">Wallet</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Your virtual trading balance. Deposit funds, track available cash, and monitor overall account value.
+          Your virtual trading balance. Deposit or withdraw funds and review your complete transaction history.
         </p>
       </div>
 

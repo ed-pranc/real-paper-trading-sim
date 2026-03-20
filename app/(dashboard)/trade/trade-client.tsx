@@ -105,7 +105,7 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
       <div className="col-span-12">
         <h1 className="text-2xl font-bold">Trade</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Search any stock and execute orders at live or historical prices.
+          Search any stock, study the price chart, and execute orders at today's prices or any past date.
         </p>
       </div>
 

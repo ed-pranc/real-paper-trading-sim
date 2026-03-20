@@ -184,7 +184,7 @@ export function PortfolioClient({
       <div className="col-span-12">
         <h1 className="text-2xl font-bold">Portfolio</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Your open positions and performance. Buy more or close positions at live or historical prices.
+          All your open positions in one view. Track unrealised P/L, portfolio composition, and value over time — at live or simulated prices.
         </p>
       </div>
 

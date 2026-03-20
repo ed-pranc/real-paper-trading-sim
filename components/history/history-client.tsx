@@ -115,7 +115,7 @@ export function HistoryClient({ transactions }: { transactions: Transaction[] })
       <div className="col-span-12">
         <h1 className="text-2xl font-bold">History</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Full record of all your trades. Filter by date range and type. Realised P/L tracks closed positions.
+          Every trade you've ever made, with full P/L breakdown. Filter by date or type, and track your win rate and cumulative returns over time.
         </p>
         {simulationDate && (
           <p className="text-xs text-amber-500 mt-1">

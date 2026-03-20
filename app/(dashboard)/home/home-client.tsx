@@ -24,6 +24,7 @@ import {
   ToggleLeft,
   CalendarDays,
   Zap,
+  Newspaper,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -113,6 +114,7 @@ const MODULES: Module[] = [
       { icon: CalendarDays,text: 'Pick any historical date back to 2000 from a calendar' },
       { icon: Tag,         text: 'All deposits and trades are automatically date-stamped' },
       { icon: Zap,         text: 'Use the LIVE toggle in the header to switch back to today\'s prices' },
+      { icon: Newspaper,   text: 'Live news is only available in Live mode — news is hidden during simulation' },
     ],
     isAnchor: true,
   },
@@ -167,7 +169,7 @@ export function HomeClient({
       {/* Hero */}
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {nickname} 👋
+          Hi, {nickname}! 👋
         </h1>
         <p className="text-muted-foreground max-w-xl">
           RPTSim is your virtual trading desk — practice investing with real market data, travel back in time to test strategies, no real money at risk.

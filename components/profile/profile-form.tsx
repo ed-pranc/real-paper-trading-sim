@@ -122,7 +122,7 @@ export function ProfileForm({ profile, email, onSaveSuccess }: ProfileFormProps)
       <div>
         <h1 className="text-2xl font-bold">Profile</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage your personal details. Your nickname appears in the sidebar and header.
+          Manage your account details. Your nickname is required and shown throughout the app — all other fields are optional.
         </p>
       </div>
 

@@ -57,7 +57,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Hello</h1>
             <p className="text-sm text-muted-foreground">
               Sign in to your virtual trading account
             </p>

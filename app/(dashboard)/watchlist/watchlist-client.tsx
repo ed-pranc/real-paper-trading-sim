@@ -142,7 +142,7 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
         <div>
           <h1 className="text-2xl font-bold">My Watchlist</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Monitor prices and trade directly from this list. Add a market above, then use the Buy button to place an order.
+            Track live and historical prices for your saved markets. Click any row to view the price chart, analyst ratings, and live news — then trade directly.
           </p>
         </div>
         <Button

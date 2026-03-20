@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ExternalLinkIcon } from 'lucide-react'
+import { ExternalLinkIcon, NewspaperIcon } from 'lucide-react'
 
 interface NewsArticle {
   title: string
@@ -27,6 +27,18 @@ function relativeTime(dateStr: string) {
 export function StockNews({ symbol, simulationDate }: { symbol: string; simulationDate: string | null }) {
   const [articles, setArticles] = useState<NewsArticle[]>([])
   const [loading, setLoading] = useState(true)
+
+  if (simulationDate) {
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-4">Latest News</p>
+        <div className="px-4 py-3 flex items-start gap-2 text-sm text-muted-foreground">
+          <NewspaperIcon className="size-4 shrink-0 mt-0.5" />
+          <p>News is only available in <span className="text-foreground font-medium">Live mode</span>. Switch the simulation date back to today to see the latest headlines.</p>
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     let cancelled = false
