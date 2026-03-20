@@ -13,22 +13,13 @@
   },
   "permissions": {
     "allow": [
-      "Bash(pnpm create:*)",
-      "Bash(rsync -a \"/Users/mbp2018/Documents/VS Code/rpts-tmp/\" \"/Users/mbp2018/Documents/VS Code/real-paper-trading-sim/\")",
-      "Bash(pnpm dlx:*)",
-      "Bash(pnpm add:*)",
-      "Bash(pnpm run:*)",
-      "WebFetch(domain:ui.shadcn.com)",
-      "Bash(curl -s -w \"\\\\n%{http_code}\" https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/registry/registry-themes.ts)",
-      "Bash(curl -s -w \"\\\\n%{http_code}\" https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/registry-themes.ts)",
-      "Bash(curl -s -w \"\\\\n%{http_code}\" https://raw.githubusercontent.com/shadcn-ui/ui/main/packages/shadcn/src/registry/registry-themes.ts)",
-      "Bash(curl -s -w \"\\\\n%{http_code}\" https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/lib/themes.ts)",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)",
-      "WebSearch",
-      "Bash(curl -s \"https://ui.shadcn.com/create\" -H \"Accept: text/html\")",
-      "Bash(curl -s \"https://ui.shadcn.com/themes\" -H \"Accept: text/html\")",
-      "Bash(curl -s https://ui.shadcn.com/_next/static/chunks/36908eac08dcc90e.js)"
+      "Bash",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
     ],
     "additionalDirectories": [
       "/Users/mbp2018/Documents/VS Code/rpts-tmp"
