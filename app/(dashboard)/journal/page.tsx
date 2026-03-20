@@ -1,15 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
-import { HistoryClient } from '@/components/history/history-client'
+import { JournalClient } from '@/components/journal/journal-client'
 
-export default async function HistoryPage() {
+export const metadata = { title: 'Journal' }
+
+export default async function JournalPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: transactions } = await supabase
+  const { data: entries } = await supabase
     .from('transactions')
     .select('id, symbol, company_name, type, quantity, price, total, pnl, trade_date, simulation_date, notes')
     .eq('user_id', user!.id)
+    .not('notes', 'is', null)
+    .neq('notes', '')
     .order('trade_date', { ascending: false })
 
-  return <HistoryClient transactions={transactions ?? []} />
+  return <JournalClient entries={entries ?? []} />
 }

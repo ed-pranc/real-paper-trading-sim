@@ -20,6 +20,7 @@ import {
   Tag,
   ArrowUpDown,
   BookOpen,
+  Pencil,
   Trophy,
   ToggleLeft,
   CalendarDays,
@@ -101,6 +102,20 @@ const MODULES: Module[] = [
       { icon: BookOpen,   text: 'Every buy and sell logged with date, price, and P/L' },
       { icon: BarChart2,  text: 'Cumulative P/L chart and monthly performance breakdown' },
       { icon: Trophy,     text: 'Win rate and closed-trade summary across your full history' },
+      { icon: Pencil,     text: 'Add a note to any trade via the pencil icon — annotated trades appear in Journal' },
+    ],
+  },
+  {
+    href: '/journal',
+    icon: BookOpen,
+    title: 'Journal',
+    badge: 'New',
+    intro: 'Your trading diary — the habit that separates disciplined traders from gamblers.',
+    features: [
+      { icon: Pencil,      text: 'Add optional reasoning notes when placing any trade' },
+      { icon: ScrollText,  text: 'Annotated trades appear on a chronological timeline' },
+      { icon: Tag,         text: 'Each entry shows the trade, P/L (sells), and your note' },
+      { icon: Activity,    text: 'Annotate past trades from History — they appear here instantly' },
     ],
   },
   {
@@ -141,9 +156,9 @@ const STEPS = [
   },
   {
     step: '04',
-    title: 'Review your results',
-    description: 'Check Portfolio for live P&L on open positions, and History for all closed trades, cumulative performance, and realised gains.',
-    href: '/history',
+    title: 'Review & journal',
+    description: 'Check Portfolio for open P&L, History for closed trades and performance charts. Add reasoning notes to any trade — annotated trades surface in your Journal timeline.',
+    href: '/journal',
   },
 ]
 

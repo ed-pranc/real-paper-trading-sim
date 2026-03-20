@@ -108,7 +108,8 @@ export async function executeBuy(
   companyName: string,
   quantity: number,
   price: number,
-  simulationDate: string | null
+  simulationDate: string | null,
+  notes?: string
 ) {
   const parsed = TradeSchema.parse({ symbol, companyName, quantity, price, simulationDate })
 
@@ -171,9 +172,26 @@ export async function executeBuy(
     total,
     trade_date: new Date().toISOString(),
     simulation_date: parsed.simulationDate,
+    notes: notes?.trim() || null,
   })
 
   await savePortfolioSnapshot(supabase, user.id, parsed.simulationDate)
+
+  revalidatePath('/', 'layout')
+}
+
+export async function updateTransactionNotes(id: string, notes: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({ notes: notes.trim() || null })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) throw new Error(error.message)
 
   revalidatePath('/', 'layout')
 }
@@ -197,7 +215,8 @@ export async function executeSell(
   companyName: string,
   quantity: number,
   price: number,
-  simulationDate: string | null
+  simulationDate: string | null,
+  notes?: string
 ) {
   const parsed = TradeSchema.parse({ symbol, companyName, quantity, price, simulationDate })
 
@@ -266,6 +285,7 @@ export async function executeSell(
     pnl,
     trade_date: new Date().toISOString(),
     simulation_date: parsed.simulationDate,
+    notes: notes?.trim() || null,
   })
 
   await savePortfolioSnapshot(supabase, user.id, parsed.simulationDate)
