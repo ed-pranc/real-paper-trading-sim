@@ -28,6 +28,8 @@ const PAGE_LABELS: Record<string, string> = {
   '/watchlist': 'Watchlist',
   '/portfolio': 'Portfolio',
   '/history':   'History',
+  '/journal':   'Journal',
+  '/specs':     'Specs',
 }
 
 interface AppHeaderProps {
