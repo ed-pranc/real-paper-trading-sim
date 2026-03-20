@@ -99,33 +99,56 @@ export function WatchlistClient({ items }: { items: WatchlistItem[] }) {
     })
   }, [items, sortCol, sortDir, prices, listedDates])
 
-  const fetchPrices = useCallback(async () => {
-    if (!symbols) return
-    setPriceLoading(true)
-    try {
-      const dateParam = simulationDate ? `&date=${encodeURIComponent(simulationDate)}` : ''
-      const res = await fetch(`/api/market/prices?symbols=${encodeURIComponent(symbols)}${dateParam}`)
-      const data = await res.json()
-      if (!res.ok || data?.error) {
-        toast.error('Price data unavailable', { description: data?.error ?? 'Failed to load prices' })
-      } else {
-        setPrices(data)
-        setLastUpdated(new Date().toLocaleTimeString())
-      }
-    } catch {
-      toast.error('Price data unavailable', { description: 'Failed to connect to price service' })
-    } finally {
-      setPriceLoading(false)
-    }
-  }, [symbols, simulationDate])
-
   useEffect(() => {
-    fetchPrices()
-    // Only auto-refresh in live mode — sim prices are historical (fixed for a given date)
-    if (simulationDate) return
-    const interval = setInterval(fetchPrices, 60_000)
-    return () => clearInterval(interval)
-  }, [fetchPrices, simulationDate])
+    const controller = new AbortController()
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+    setPrices({})
+
+    const loadPrices = async () => {
+      if (!symbols) return
+      setPriceLoading(true)
+      try {
+        const dateParam = simulationDate ? `&date=${encodeURIComponent(simulationDate)}` : ''
+        const res = await fetch(
+          `/api/market/prices?symbols=${encodeURIComponent(symbols)}${dateParam}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+        if (!res.ok || data?.error) {
+          if (simulationDate) {
+            // SIM mode: stay loading and retry — never show live prices as fallback
+            retryTimer = setTimeout(loadPrices, 30_000)
+            return
+          }
+          toast.error('Price data unavailable', { description: data?.error ?? 'Failed to load prices' })
+          setPriceLoading(false)
+        } else {
+          setPrices(data)
+          setLastUpdated(new Date().toLocaleTimeString())
+          setPriceLoading(false)
+        }
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        if (simulationDate) {
+          retryTimer = setTimeout(loadPrices, 30_000)
+          return
+        }
+        toast.error('Price data unavailable', { description: 'Failed to connect to price service' })
+        setPriceLoading(false)
+      }
+    }
+
+    loadPrices()
+
+    if (simulationDate) {
+      return () => { controller.abort(); if (retryTimer) clearTimeout(retryTimer) }
+    }
+
+    // Live mode: auto-refresh every 60s
+    const interval = setInterval(loadPrices, 60_000)
+    return () => { controller.abort(); clearInterval(interval); if (retryTimer) clearTimeout(retryTimer) }
+  }, [symbols, simulationDate])
 
   useEffect(() => {
     if (!symbols) return

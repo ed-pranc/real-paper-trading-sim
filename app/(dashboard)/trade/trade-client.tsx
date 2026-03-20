@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -64,28 +64,54 @@ export function TradeClient({ initialSymbol }: { initialSymbol?: string }) {
     return () => clearTimeout(timeout)
   }, [query])
 
-  const fetchQuote = useCallback(async () => {
-    if (!symbol) return
-    setQuoteLoading(true)
-    try {
-      const dateParam = simulationDate ? `&date=${simulationDate}` : ''
-      const res = await fetch(`/api/market/quote?symbol=${symbol}${dateParam}`)
-      const data = await res.json()
-      if (!res.ok) { setQuote(null); return }
-      setQuote(data)
-      setLastUpdated(new Date().toLocaleTimeString())
-    } finally {
-      setQuoteLoading(false)
-    }
-  }, [symbol, simulationDate])
-
   useEffect(() => {
-    fetchQuote()
-    if (!simulationDate) {
-      const interval = setInterval(fetchQuote, 60_000)
-      return () => clearInterval(interval)
+    if (!symbol) return
+    const controller = new AbortController()
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+    setQuote(null)
+
+    const loadQuote = async () => {
+      setQuoteLoading(true)
+      try {
+        const dateParam = simulationDate ? `&date=${simulationDate}` : ''
+        const res = await fetch(
+          `/api/market/quote?symbol=${symbol}${dateParam}`,
+          { signal: controller.signal }
+        )
+        const data = await res.json()
+        if (!res.ok) {
+          if (simulationDate) {
+            // SIM mode: stay loading and retry — never show live price as fallback
+            retryTimer = setTimeout(loadQuote, 30_000)
+            return
+          }
+          setQuoteLoading(false)
+        } else {
+          setQuote(data)
+          setLastUpdated(new Date().toLocaleTimeString())
+          setQuoteLoading(false)
+        }
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return
+        if (simulationDate) {
+          retryTimer = setTimeout(loadQuote, 30_000)
+          return
+        }
+        setQuoteLoading(false)
+      }
     }
-  }, [fetchQuote])
+
+    loadQuote()
+
+    if (simulationDate) {
+      return () => { controller.abort(); if (retryTimer) clearTimeout(retryTimer) }
+    }
+
+    // Live mode: auto-refresh every 60s
+    const interval = setInterval(loadQuote, 60_000)
+    return () => { controller.abort(); clearInterval(interval); if (retryTimer) clearTimeout(retryTimer) }
+  }, [symbol, simulationDate])
 
   function selectSymbol(sym: string, name: string) {
     setSymbol(sym)
