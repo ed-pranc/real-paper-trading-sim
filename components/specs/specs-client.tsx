@@ -79,7 +79,7 @@ const TECH_STACK: { layer: string; tech: string; icon: LucideIcon }[] = [
   { layer: 'Language',       tech: 'TypeScript (strict)',                                icon: Code2 },
   { layer: 'UI Library',     tech: 'shadcn/ui · Tailwind CSS v4',                       icon: Globe },
   { layer: 'Auth + Database',tech: 'Supabase · PostgreSQL · Row-Level Security',        icon: Database },
-  { layer: 'Market Data',    tech: 'Twelve Data API (quotes · time_series · search)',   icon: BarChart2 },
+  { layer: 'Market Data',    tech: 'Twelve Data API (quotes · time_series · search) · Finnhub (live quotes · news · analyst data)', icon: BarChart2 },
   { layer: 'Charts',         tech: 'Recharts (area · bar · line)',                       icon: BarChart2 },
   { layer: 'Deployment',     tech: 'Vercel — CI/CD on every push to main',              icon: Rocket },
   { layer: 'State & Logic',  tech: 'React Context · Server Actions · Zod validation',  icon: Zap },
