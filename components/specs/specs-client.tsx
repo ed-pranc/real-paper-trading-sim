@@ -19,6 +19,9 @@ import {
   Newspaper,
   Bell,
   Smartphone,
+  Clock,
+  Bot,
+  FileCode2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,10 +31,14 @@ import type { LucideIcon } from 'lucide-react'
 // ─── Data ───────────────────────────────────────────────────────────────────
 
 const BUILD_STATS = [
-  { value: '65',  label: 'Commits',     icon: GitCommit },
-  { value: '38',  label: 'Branches',    icon: GitBranch },
-  { value: '5',   label: 'Days',        icon: CalendarDays },
-  { value: '~20', label: 'Deployments', icon: Rocket },
+  { value: '65',     label: 'Commits',       icon: GitCommit },
+  { value: '38',     label: 'Branches',      icon: GitBranch },
+  { value: '5',      label: 'Days',          icon: CalendarDays },
+  { value: '~20',    label: 'Deployments',   icon: Rocket },
+  { value: '~40',    label: 'Dev Hours',     icon: Clock },
+  { value: '~10M',   label: 'AI Tokens',     icon: Bot },
+  { value: '12,412', label: 'Lines of Code', icon: FileCode2 },
+  { value: '63',     label: 'Components',    icon: Layers },
 ]
 
 const EVAL_CRITERIA = [
